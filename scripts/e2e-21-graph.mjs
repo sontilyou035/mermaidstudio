@@ -283,16 +283,6 @@ const cleared = await evaluate(`(() => ({
 }))()`)
 check('点空白清掉聚焦', cleared.dim === 0 && cleared.focus === 0, JSON.stringify(cleared))
 
-/* ---------- 展开字段 ---------- */
-
-await evaluate(`document.querySelector('.ms-gdot[data-id="' + ${JSON.stringify(fixture.ids.items)} + '"] .ms-gdot__toggle').click()`)
-await sleep(300)
-const expanded = await evaluate(`(() => {
-  const card = document.querySelector('.ms-gdot.is-expanded .ms-gcard')
-  return { card: !!card, rows: card ? card.querySelectorAll('.ms-gcard__row').length : 0 }
-})()`)
-check('展开节点显示表字段（只读卡片）', expanded.card === true && expanded.rows === 3, JSON.stringify(expanded))
-
 /* ---------- 双击回流程图 ---------- */
 
 const targetPoint = await evaluate(`(() => {

@@ -81,7 +81,7 @@ test('只有可见的实体节点进图', () => {
   )
 })
 
-test('节点带表名与原始字段文本', () => {
+test('节点带表名；空标签回落到 id', () => {
   const model = deriveGraphModel(
     doc(
       [
@@ -97,9 +97,7 @@ test('节点带表名与原始字段文本', () => {
   const byId = new Map(model.nodes.map((n) => [n.id, n]))
 
   assert.equal(byId.get('t_orders').label, 'orders')
-  assert.equal(byId.get('t_orders').columns, 'id: bigint\nuser_id: bigint\n\namount: decimal')
   assert.equal(byId.get('p_pay').label, 'p_pay')
-  assert.equal(byId.get('p_pay').columns, '')
 })
 
 test('邻接是无向的，跳数按最短路径算', () => {
@@ -225,14 +223,32 @@ test('跳数决定离根多远：1 跳比 2 跳更近', () => {
   assert.ok(radiusOf(pos.get('t_c')) === 0)
 })
 
-test('展开的大卡片占更大的位置，不会和邻居挤在一起', () => {
-  const model = deriveGraphModel(doc([node('t_a'), node('t_b')], [edge('e1', 't_a', 't_b')]))
-  const gap = (m) => Math.hypot(m.get('t_a').x - m.get('t_b').x, m.get('t_a').y - m.get('t_b').y)
+test('两个邻居不落在穿过焦点的同一条直线上（小图排成一条线的根因）', () => {
+  const model = deriveGraphModel(
+    doc([node('t_a'), node('t_b'), node('t_c')], [edge('e1', 't_a', 't_b'), edge('e2', 't_a', 't_c')]),
+  )
+  const pos = layoutGraph(model, { rootId: 't_a' })
+  const a = pos.get('t_a')
+  const b = pos.get('t_b')
+  const c = pos.get('t_c')
+  const cross = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
+  const scale = Math.hypot(b.x - a.x, b.y - a.y) * Math.hypot(c.x - a.x, c.y - a.y)
+  const sin = Math.abs(cross) / scale
+  assert.ok(sin > 0.25, `两个邻居几乎在一条直线上：sin=${sin.toFixed(2)}`)
+})
 
-  const small = gap(layoutGraph(model))
-  const big = gap(layoutGraph(model, { radiusOf: () => 200 }))
-  assert.ok(big > small + 50, `大占位应当拉得更开：small=${small.toFixed(1)} big=${big.toFixed(1)}`)
-  assert.ok(big >= 380, `两个半径 200 的卡片至少要隔 380：实际 ${big.toFixed(1)}`)
+test('链式图里 1 跳和 2 跳的表也不会落在同一条直线上', () => {
+  const model = deriveGraphModel(
+    doc([node('t_a'), node('t_b'), node('t_c')], [edge('e1', 't_a', 't_b'), edge('e2', 't_b', 't_c')]),
+  )
+  const pos = layoutGraph(model, { rootId: 't_a' })
+  const a = pos.get('t_a')
+  const b = pos.get('t_b')
+  const c = pos.get('t_c')
+  const cross = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
+  const scale = Math.hypot(b.x - a.x, b.y - a.y) * Math.hypot(c.x - a.x, c.y - a.y)
+  const sin = Math.abs(cross) / scale
+  assert.ok(sin > 0.25, `1 跳与 2 跳几乎在一条直线上：sin=${sin.toFixed(2)}`)
 })
 
 test('结构签名只反映谁连着谁', () => {

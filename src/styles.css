@@ -2445,7 +2445,13 @@ body.ms-space-pan .react-flow__pane.dragging {
 }
 
 .ms-gdot__label {
-  max-width: 150px;
+  /* 绝对定位：表名可能比 140 的节点框长（如 ty_product.mt_store_sku_wide），
+     允许它溢出节点框，不要截断成省略号 */
+  position: absolute;
+  top: 19px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 230px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2469,9 +2475,21 @@ body.ms-space-pan .react-flow__pane.dragging {
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--gdot, var(--accent)) 24%, transparent);
 }
 
+.ms-gdot.is-focus {
+  z-index: 2;
+}
+
 .ms-gdot.is-focus .ms-gdot__label {
   color: var(--text);
   font-weight: 600;
+  /* 标签允许互相压住，焦点这张要压在最上面、加一层底色才读得清 */
+  background: var(--bg);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.ms-gdot:hover {
+  z-index: 3;
 }
 
 /* 压暗但不消失：读者要能看出"那边还有几张表"，只是它们不在焦点上 */
@@ -2493,92 +2511,6 @@ body.ms-space-pan .react-flow__pane.dragging {
   background: transparent;
   opacity: 0;
   pointer-events: none;
-}
-
-.ms-gdot__toggle {
-  position: absolute;
-  top: -2px;
-  right: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--panel-2);
-  color: var(--text-dim);
-  font-size: 11px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.ms-gdot:hover .ms-gdot__toggle,
-.ms-gdot.is-expanded .ms-gdot__toggle {
-  display: inline-flex;
-}
-
-.ms-gdot.is-expanded {
-  z-index: 2;
-}
-
-.ms-gdot.is-expanded .ms-gdot__label {
-  color: var(--text);
-  font-weight: 600;
-}
-
-/* 展开后的表卡片：只读，字段来自 values.columns */
-.ms-gcard {
-  min-width: 200px;
-  max-width: 260px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--panel-2);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.ms-gcard__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 7px 10px;
-  border-bottom: 1px solid var(--border);
-  font-size: 12.5px;
-  font-weight: 600;
-}
-
-.ms-gcard__count {
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--text-dim);
-}
-
-.ms-gcard__rows {
-  list-style: none;
-  margin: 0;
-  padding: 4px 0;
-  max-height: 260px;
-  overflow: auto;
-}
-
-.ms-gcard__row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 2px 10px;
-  font-size: 11px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-
-.ms-gcard__name {
-  color: var(--text);
-}
-
-.ms-gcard__type {
-  color: var(--text-dim);
 }
 
 /* 连线：直线 + 自绘箭头 */

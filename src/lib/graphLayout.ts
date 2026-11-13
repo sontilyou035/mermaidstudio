@@ -22,8 +22,6 @@ export interface LayoutOptions {
   spacing?: number
   /** 节点占位半径（碰撞用） */
   radius?: number
-  /** 逐个节点的占位半径：展开成表卡片的点要占更大的位置，否则会压住邻居 */
-  radiusOf?: (id: string) => number
   /** 焦点：钉在原点，并从它开始数跳数；缺省取度数最高的表 */
   rootId?: string | null
   iterations?: number
@@ -32,12 +30,10 @@ export interface LayoutOptions {
 
 /** 点的占位半径 */
 export const DOT_RADIUS = 32
-/** 展开成表卡片时的占位半径（卡片约 230×120，取半对角线） */
-export const CARD_RADIUS = 100
 /** 固定种子：同一份图每次摆出来一样 */
 export const DEFAULT_SEED = 20261113
 
-const DEFAULTS: Required<Omit<LayoutOptions, 'radiusOf' | 'rootId'>> = {
+const DEFAULTS: Required<Omit<LayoutOptions, 'rootId'>> = {
   spacing: 100,
   radius: DOT_RADIUS,
   iterations: 320,
@@ -69,7 +65,6 @@ function seededRandom(seed: number): () => number {
 
 export function layoutGraph(model: GraphModel, opts: LayoutOptions = {}): Map<string, Point> {
   const { spacing, radius, iterations, seed } = { ...DEFAULTS, ...opts }
-  const radiusAt = (id: string) => (opts.radiusOf ? opts.radiusOf(id) : radius)
   const out = new Map<string, Point>()
   const count = model.nodes.length
   if (!count) return out
@@ -99,8 +94,6 @@ export function layoutGraph(model: GraphModel, opts: LayoutOptions = {}): Map<st
   const ys = new Float64Array(count)
 
   /** 每一圈的半径：跳数越远越大，节点越多越大 */
-  const radii = model.nodes.map((n) => radiusAt(n.id))
-
   /**
    * 环半径是累加的：外环必须比内环"再多出两个半径"，否则展开的大卡片会压住内环的邻居。
    * 同时保证环之间至少比 spacing 更开——跳数要看得出来。
@@ -108,7 +101,7 @@ export function layoutGraph(model: GraphModel, opts: LayoutOptions = {}): Map<st
   const rings = [...byRing.keys()].sort((a, b) => a - b)
   const widestOfRing = new Map<number, number>()
   for (const r of rings) {
-    widestOfRing.set(r, Math.max(...byRing.get(r)!.map((id) => radiusAt(id))))
+    widestOfRing.set(r, radius)
   }
   const ringRadiusOf = new Map<number, number>()
   let acc = 0
@@ -128,6 +121,11 @@ export function layoutGraph(model: GraphModel, opts: LayoutOptions = {}): Map<st
     prevWidest = widest
   }
 
+  /** 初始槽位（黄金角环上的位置）：后面用一个很弱的"回槽"力把节点拴在扇区里，
+   *  否则只有两个邻居时，斥力会把它们顶到正对面，整张图又变回一条直线 */
+  const slotX = new Float64Array(count)
+  const slotY = new Float64Array(count)
+
   const index = new Map<string, number>()
   model.nodes.forEach((n, i) => {
     index.set(n.id, i)
@@ -139,10 +137,15 @@ export function layoutGraph(model: GraphModel, opts: LayoutOptions = {}): Map<st
     }
     const ringNodes = byRing.get(r)!
     const slot = ringNodes.indexOf(n.id)
-    const angle = (2 * Math.PI * slot) / ringNodes.length + (rand() - 0.5) * 0.25
+    // 黄金角散布 + 一点抖动：均匀但不对齐坐标轴。
+    // 按 slot 均分角度的话，两个邻居永远是正对面，小图就被摆成一条直线。
+    // 每一圈再整体转一个固定角度：否则每圈的第 0 个节点都在 0°，链式图又成一条直线
+    const angle = r * 2.399963229728653 + slot * 2.399963229728653 + (rand() - 0.5) * 0.35
     const ringRadius = ringRadiusOf.get(r)!
     xs[i] = ringRadius * Math.cos(angle)
     ys[i] = ringRadius * Math.sin(angle)
+    slotX[i] = xs[i]
+    slotY[i] = ys[i]
   })
 
   const k = spacing
@@ -176,7 +179,7 @@ export function layoutGraph(model: GraphModel, opts: LayoutOptions = {}): Map<st
         fy[j] -= uy * force
 
         // 碰撞：比"两个半径之和"更近就硬推开（展开的卡片半径更大）
-        const minD = radii[i] + radii[j]
+        const minD = 2 * radius
         if (d < minD) {
           const push = ((minD - d) / minD) * k * 1.5
           fx[i] += ux * push
@@ -190,16 +193,12 @@ export function layoutGraph(model: GraphModel, opts: LayoutOptions = {}): Map<st
     // 连边弹簧：目标长度按"跨几跳"定，跨的环越多拉得越长
     for (const [i, j] of idxEdges) {
       const hopGap = Math.abs(ring.get(model.nodes[i].id)! - ring.get(model.nodes[j].id)!)
-      // 弹簧目标也要吃掉卡片尺寸：展开成卡片的点不能把邻居拉进自己身子里
-      const target = Math.max(
-        k * Math.max(1, Math.min(3, hopGap)) * 0.95,
-        radii[i] + radii[j] + k * 0.2,
-      )
+      const target = k * Math.max(1, Math.min(3, hopGap)) * 0.95
       const dx = xs[j] - xs[i]
       const dy = ys[j] - ys[i]
       const d = Math.max(0.01, Math.hypot(dx, dy))
       // 线性弹簧：比 Fruchterman-Reingold 的 d²/k 温和，不会把展开的卡片硬拽到邻居身上
-      const force = (d - target) * 0.5
+      const force = (d - target) * 0.35
       const ux = dx / d
       const uy = dy / d
       fx[i] += ux * force
@@ -215,6 +214,13 @@ export function layoutGraph(model: GraphModel, opts: LayoutOptions = {}): Map<st
       fy[i] -= ys[i] * 0.05
     }
 
+    // 回槽力：很弱，但足以不让斥力把整圈节点挤成一条直线
+    for (let i = 0; i < count; i++) {
+      if (pinned.has(i)) continue
+      fx[i] += (slotX[i] - xs[i]) * 0.12
+      fy[i] += (slotY[i] - ys[i]) * 0.12
+    }
+
     // 环约束：把节点拉回它那一跳的半径上。
     // 没有这条，弹簧会把 2 跳的节点拽回 1 跳附近，"越远越远"就没了。
     for (let i = 0; i < count; i++) {
@@ -222,7 +228,7 @@ export function layoutGraph(model: GraphModel, opts: LayoutOptions = {}): Map<st
       if (!targetR) continue
       const d = Math.hypot(xs[i], ys[i])
       if (d < 0.01) continue
-      const force = (targetR - d) * 1.2
+      const force = (targetR - d) * 2.2
       fx[i] += (xs[i] / d) * force
       fy[i] += (ys[i] / d) * force
     }

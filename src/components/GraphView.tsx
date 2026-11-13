@@ -12,8 +12,8 @@ import '@xyflow/react/dist/style.css'
 import { useStore } from '../store'
 import { getRfInstance, setRfInstance } from '../lib/rf'
 import { bfsHops, deriveGraphModel, graphSignature } from '../lib/graphModel'
-import { CARD_RADIUS, DOT_RADIUS, DEFAULT_SEED, defaultRootId, layoutGraph } from '../lib/graphLayout'
-import { GraphDotNode, type GraphDotNodeModel } from './GraphDotNode'
+import { DEFAULT_SEED, defaultRootId, layoutGraph } from '../lib/graphLayout'
+import { DOT_ANCHOR_Y, GraphDotNode, NODE_H, NODE_W, type GraphDotNodeModel } from './GraphDotNode'
 import { GraphEdgeView, type GraphEdgeModel } from './GraphEdgeView'
 
 const nodeTypes = { dot: GraphDotNode }
@@ -28,12 +28,6 @@ const BUSY_NODES = 250
  * 延迟窗口内收到第二下 click（detail=2）就当作双击，撤销这次重排。
  */
 const FOCUS_DELAY_MS = 280
-
-/** 节点在画布上的固定占位框：圆点在顶部正中，名字在下面 */
-const NODE_W = 140
-const NODE_H = 56
-/** 圆点中心距节点框顶部的距离 */
-const DOT_ANCHOR_Y = 8
 
 type Point = { x: number; y: number }
 
@@ -74,9 +68,7 @@ function GraphViewInner() {
   const focusTimer = useRef<number | null>(null)
   const [depth, setDepth] = useState<Depth>(1)
   const [onlyOpen, setOnlyOpen] = useState(false)
-  const [expanded, setExpanded] = useState<string[]>([])
   const [seed, setSeed] = useState(DEFAULT_SEED)
-  const expandedKey = expanded.join(',')
   /**
    * 手动拖动过的点：只存在视图里（不写回文档），布局重算时优先用这里的坐标。
    * 这是"拖节点 = 把节点摆在我想看的位置"，不是编辑图结构。
@@ -94,11 +86,9 @@ function GraphViewInner() {
         seed,
         // 焦点在圆心：它 0 跳，邻居一圈一圈往外
         rootId: layoutFocus,
-        // 展开成卡片的点要占更大的位置，否则会压住邻居
-        radiusOf: (id) => (expanded.includes(id) ? CARD_RADIUS : DOT_RADIUS),
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [signature, seed, expandedKey, layoutFocus],
+    [signature, seed, layoutFocus],
   )
 
   const scheduleLayoutFocus = useCallback((id: string | null) => {
@@ -147,10 +137,6 @@ function GraphViewInner() {
     [model, focusId],
   )
 
-  const toggleExpand = useCallback((id: string) => {
-    setExpanded((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  }, [])
-
   const nodes = useMemo<GraphDotNodeModel[]>(
     () =>
       model.nodes.map((n) => {
@@ -164,20 +150,19 @@ function GraphViewInner() {
           position: toNodePosition(overrides[n.id] ?? positions.get(n.id) ?? { x: 0, y: 0 }),
           width: NODE_W,
           height: NODE_H,
+          // 焦点压在最上层：标签互相重叠时，至少焦点这张读得清
+          zIndex: isFocus ? 2 : 1,
           connectable: false,
           data: {
             label: n.label,
-            columns: n.columns,
             groupIndex: n.groupIndex,
             hop: hop ?? null,
             isFocus,
             isDim,
-            expanded: expanded.includes(n.id),
-            onToggleExpand: toggleExpand,
           },
         }
       }),
-    [model, hops, focusId, depth, positions, expanded, toggleExpand, overrides],
+    [model, hops, focusId, depth, positions, overrides],
   )
 
   const dimIds = useMemo(

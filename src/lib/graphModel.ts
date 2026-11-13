@@ -11,8 +11,6 @@ import { isEdgeLabelConforming } from './edgeLabels.ts'
 export interface GraphNode {
   id: string
   label: string
-  /** 原始字段文本（展开成卡片时逐行渲染，只读） */
-  columns: string
   /** 所属分组的调色索引；-1 表示不属于任何分组 */
   groupIndex: number
 }
@@ -90,7 +88,6 @@ export function deriveGraphModel(doc: DiagramDoc): GraphModel {
     .map((n) => ({
       id: n.id,
       label: nodeLabel(n),
-      columns: String(n.data.values?.columns ?? ''),
       groupIndex: n.data.groupId ? (groupOrder.get(n.data.groupId) ?? -1) : -1,
     }))
 
