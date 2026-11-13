@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { deriveGraphModel, bfsHops } from '../src/lib/graphModel.ts'
-import { layoutGraph, graphSignature } from '../src/lib/graphLayout.ts'
+import { deriveGraphModel, bfsHops, graphSignature } from '../src/lib/graphModel.ts'
+import { layoutGraph } from '../src/lib/graphLayout.ts'
 
 /* ---------- 夹具 ---------- */
 
@@ -58,7 +58,7 @@ test('只有可见的实体节点进图', () => {
         node('t_a'),
         node('t_b'),
         node('g_1', { isSubgraph: true }),
-        node('t_hidden', { hidden: true }),
+        { ...node('t_hidden'), hidden: true },
         { ...node('t_hidden2'), hidden: true },
         node('x_note', { shape: 'text' }),
         node('x_note2', { shape: 'text' }),
@@ -81,7 +81,7 @@ test('只有可见的实体节点进图', () => {
   )
 })
 
-test('节点带表名与字段数徽标', () => {
+test('节点带表名与原始字段文本', () => {
   const model = deriveGraphModel(
     doc(
       [
@@ -97,10 +97,9 @@ test('节点带表名与字段数徽标', () => {
   const byId = new Map(model.nodes.map((n) => [n.id, n]))
 
   assert.equal(byId.get('t_orders').label, 'orders')
-  assert.equal(byId.get('t_orders').fieldCount, 3)
   assert.equal(byId.get('t_orders').columns, 'id: bigint\nuser_id: bigint\n\namount: decimal')
   assert.equal(byId.get('p_pay').label, 'p_pay')
-  assert.equal(byId.get('p_pay').fieldCount, 0)
+  assert.equal(byId.get('p_pay').columns, '')
 })
 
 test('邻接是无向的，跳数按最短路径算', () => {

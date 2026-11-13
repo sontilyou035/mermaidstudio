@@ -2445,18 +2445,10 @@ body.ms-space-pan .react-flow__pane.dragging {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+  /* --gdot 由节点按分组写入（同组同色），缺省跟随主色 */
+  background: var(--gdot, var(--accent));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gdot, var(--accent)) 20%, transparent);
 }
-
-/* 同组同色：给"这几张表属于一个模块"的线索，不画分组框 */
-.ms-gdot[data-group='0'] .ms-gdot__dot { background: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18); }
-.ms-gdot[data-group='1'] .ms-gdot__dot { background: #059669; box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.18); }
-.ms-gdot[data-group='2'] .ms-gdot__dot { background: #d97706; box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.18); }
-.ms-gdot[data-group='3'] .ms-gdot__dot { background: #7c3aed; box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18); }
-.ms-gdot[data-group='4'] .ms-gdot__dot { background: #e11d48; box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.18); }
-.ms-gdot[data-group='5'] .ms-gdot__dot { background: #0d9488; box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18); }
-.ms-gdot[data-group='6'] .ms-gdot__dot { background: #64748b; box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.2); }
 
 .ms-gdot__label {
   max-width: 190px;
@@ -2611,6 +2603,11 @@ body.ms-space-pan .react-flow__pane.dragging {
 
 .ms-gedge__warn {
   fill: var(--danger);
+  font-size: 11px;
+  font-family: system-ui, sans-serif;
+  paint-order: stroke;
+  stroke: var(--panel-2);
+  stroke-width: 2.5px;
 }
 
 .ms-gedge.is-dim {

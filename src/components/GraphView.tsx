@@ -10,8 +10,8 @@ import {
 import '@xyflow/react/dist/style.css'
 import { useStore } from '../store'
 import { getRfInstance, setRfInstance } from '../lib/rf'
-import { bfsHops, deriveGraphModel } from '../lib/graphModel'
-import { graphSignature, layoutGraph } from '../lib/graphLayout'
+import { bfsHops, deriveGraphModel, graphSignature } from '../lib/graphModel'
+import { CARD_RADIUS, DOT_RADIUS, DEFAULT_SEED, layoutGraph } from '../lib/graphLayout'
 import { GraphDotNode, type GraphDotNodeModel } from './GraphDotNode'
 import { GraphEdgeView, type GraphEdgeModel } from './GraphEdgeView'
 
@@ -34,7 +34,7 @@ function GraphViewInner() {
   const [depth, setDepth] = useState<Depth>(1)
   const [onlyOpen, setOnlyOpen] = useState(false)
   const [expanded, setExpanded] = useState<string[]>([])
-  const [seed, setSeed] = useState(20261113)
+  const [seed, setSeed] = useState(DEFAULT_SEED)
   const expandedKey = expanded.join(',')
 
   const model = useMemo(() => deriveGraphModel(doc), [doc.nodes, doc.edges])
@@ -47,7 +47,7 @@ function GraphViewInner() {
       layoutGraph(model, {
         seed,
         // 展开成卡片的点要占更大的位置，否则会压住邻居
-        radiusOf: (id) => (expanded.includes(id) ? 130 : 64),
+        radiusOf: (id) => (expanded.includes(id) ? CARD_RADIUS : DOT_RADIUS),
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [signature, seed, expandedKey],
@@ -76,12 +76,10 @@ function GraphViewInner() {
           connectable: false,
           data: {
             label: n.label,
-            fieldCount: n.fieldCount,
             columns: n.columns,
             groupIndex: n.groupIndex,
             hop: hop ?? null,
             isFocus,
-            isNear: !isDim,
             isDim,
             expanded: expanded.includes(n.id),
             onToggleExpand: toggleExpand,
@@ -115,6 +113,9 @@ function GraphViewInner() {
         })),
     [model, onlyOpen, dimIds],
   )
+
+  // 卸载时把单例清掉：否则"双击回流程图"的第一帧会对着已经卸载的画布 fitView
+  useEffect(() => () => setRfInstance(null), [])
 
   // 重排后把整张图重新装进视口；聚焦只压暗，不动视口
   useEffect(() => {
@@ -175,7 +176,6 @@ function GraphViewInner() {
           setFocusId(n.id)
           selectOnly([n.id])
         }}
-        onNodeDoubleClick={(_e, n) => jumpToFlow(n.id)}
         onPaneClick={() => {
           setFocusId(null)
           clearSelection()

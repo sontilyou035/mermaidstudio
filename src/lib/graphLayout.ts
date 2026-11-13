@@ -27,21 +27,18 @@ export interface LayoutOptions {
   seed?: number
 }
 
+/** 点的占位半径 */
+export const DOT_RADIUS = 64
+/** 展开成表卡片时的占位半径（卡片约 230×120，取半对角线） */
+export const CARD_RADIUS = 130
+/** 固定种子：同一份图每次摆出来一样 */
+export const DEFAULT_SEED = 20261113
+
 const DEFAULTS: Required<Omit<LayoutOptions, 'radiusOf'>> = {
   spacing: 160,
-  radius: 64,
+  radius: DOT_RADIUS,
   iterations: 320,
-  seed: 20261113,
-}
-
-/** 结构签名：只反映"谁连着谁"，用来判断要不要重排（拖动画布位置不该触发重算） */
-export function graphSignature(model: GraphModel): string {
-  const nodes = model.nodes.map((n) => n.id).sort().join(',')
-  const edges = model.edges
-    .map((e) => (e.source <= e.target ? `${e.source}>${e.target}` : `${e.target}>${e.source}`))
-    .sort()
-    .join(',')
-  return `${model.nodes.length}|${model.edges.length}|${nodes}|${edges}`
+  seed: DEFAULT_SEED,
 }
 
 /** 没有焦点时选一个根：度数最高，同分取模型里靠前的 */

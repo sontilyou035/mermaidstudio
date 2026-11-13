@@ -1,4 +1,4 @@
-import type { DiagramDoc, FlowEdge, FlowNode } from '../types'
+import type { DiagramDoc, FlowNode } from '../types'
 // 显式带 .ts：本模块要被 node --experimental-strip-types 直接跑（scripts/unit-graph.mjs），
 // Node 的 ESM 解析要求扩展名；tsconfig 已开 allowImportingTsExtensions。
 import { isEdgeLabelConforming } from './edgeLabels.ts'
@@ -11,8 +11,6 @@ import { isEdgeLabelConforming } from './edgeLabels.ts'
 export interface GraphNode {
   id: string
   label: string
-  /** 表字段行数；非表节点为 0 */
-  fieldCount: number
   /** 原始字段文本（展开成卡片时逐行渲染，只读） */
   columns: string
   /** 所属分组的调色索引；-1 表示不属于任何分组 */
@@ -42,7 +40,7 @@ export interface GraphModel {
 
 /** 分组容器不是实体，不进图；隐藏状态记在 React Flow 节点上（图层开关用的就是它） */
 function isEntity(n: FlowNode): boolean {
-  return !n.data.isSubgraph && !n.hidden && !n.data.hidden
+  return !n.data.isSubgraph && !n.hidden
 }
 
 /**
@@ -51,13 +49,6 @@ function isEntity(n: FlowNode): boolean {
  */
 function isAnnotation(n: FlowNode): boolean {
   return n.data.shape === 'text'
-}
-
-/** 表字段行数：`values.columns` 里非空行的条数 */
-function fieldRowCount(n: FlowNode): number {
-  const columns = n.data.values?.columns
-  if (typeof columns !== 'string' || !columns.trim()) return 0
-  return columns.split('\n').filter((line) => line.trim() !== '').length
 }
 
 function nodeLabel(n: FlowNode): string {
@@ -72,7 +63,7 @@ export function deriveGraphModel(doc: DiagramDoc): GraphModel {
   const edges: GraphEdge[] = []
   const degree = new Map<string, number>()
   for (const e of doc.edges) {
-    if ((e as FlowEdge).hidden) continue
+    if (e.hidden) continue
     if (!entityIds.has(e.source) || !entityIds.has(e.target)) continue
     const label = String(e.data?.label ?? e.label ?? '').trim()
     edges.push({
@@ -99,7 +90,6 @@ export function deriveGraphModel(doc: DiagramDoc): GraphModel {
     .map((n) => ({
       id: n.id,
       label: nodeLabel(n),
-      fieldCount: fieldRowCount(n),
       columns: String(n.data.values?.columns ?? ''),
       groupIndex: n.data.groupId ? (groupOrder.get(n.data.groupId) ?? -1) : -1,
     }))
@@ -111,8 +101,7 @@ export function deriveGraphModel(doc: DiagramDoc): GraphModel {
   for (const n of nodes) neighbors.set(n.id, [])
   const seen = new Set<string>()
   for (const e of keptEdges) {
-    const [a, b] = e.source <= e.target ? [e.source, e.target] : [e.target, e.source]
-    const key = `${a}\u0000${b}`
+    const key = undirectedKey(e.source, e.target)
     if (seen.has(key)) continue
     seen.add(key)
     neighbors.get(e.source)!.push(e.target)
@@ -120,6 +109,18 @@ export function deriveGraphModel(doc: DiagramDoc): GraphModel {
   }
 
   return { nodes, edges: keptEdges, neighbors }
+}
+
+/** 无向边的稳定键：A→B 与 B→A 视为同一条 */
+export function undirectedKey(a: string, b: string): string {
+  return a <= b ? `${a}\u0000${b}` : `${b}\u0000${a}`
+}
+
+/** 结构签名：只反映"谁连着谁"，用来判断要不要重排（拖动画布位置不该触发重算） */
+export function graphSignature(model: GraphModel): string {
+  const nodes = model.nodes.map((n) => n.id).sort().join(',')
+  const edges = model.edges.map((e) => undirectedKey(e.source, e.target)).sort().join(',')
+  return `${model.nodes.length}|${model.edges.length}|${nodes}|${edges}`
 }
 
 /** 从某个节点出发的最短跳数（1 跳 = 一条连线）；不可达的节点不在返回表里 */

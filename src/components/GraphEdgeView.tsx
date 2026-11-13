@@ -51,12 +51,15 @@ function GraphEdgeViewInner({ id, sourceX, sourceY, targetX, targetY, data }: Ed
         />
       ) : null}
       {d.warn ? (
-        <circle
+        <text
           className="ms-gedge__warn"
-          cx={(sourceX + targetX) / 2}
-          cy={(sourceY + targetY) / 2}
-          r={3.5}
-        />
+          x={(sourceX + targetX) / 2}
+          y={(sourceY + targetY) / 2}
+          textAnchor="middle"
+          dominantBaseline="central"
+        >
+          ⚠
+        </text>
       ) : null}
     </g>
   )

@@ -175,7 +175,7 @@ await sleep(300)
 const focus = await evaluate(`(() => ({
   focus: document.querySelectorAll('.ms-gdot.is-focus').length,
   dim: document.querySelectorAll('.ms-gdot.is-dim').length,
-  near: document.querySelectorAll('.ms-gdot.is-near').length,
+  near: document.querySelectorAll('.ms-gdot:not(.is-dim)').length,
   selected: window.__ms.store.getState().doc.nodes.filter(n => n.selected).map(n => n.id),
 }))()`)
 check('单击聚焦：1 个焦点、2 跳以外压暗', focus.focus === 1 && focus.dim === 2 && focus.near === 2, JSON.stringify(focus))
@@ -185,7 +185,7 @@ await evaluate(`document.querySelector('[data-depth="2"]').click()`)
 await sleep(300)
 const depth2 = await evaluate(`(() => ({
   dim: document.querySelectorAll('.ms-gdot.is-dim').length,
-  near: document.querySelectorAll('.ms-gdot.is-near').length,
+  near: document.querySelectorAll('.ms-gdot:not(.is-dim)').length,
 }))()`)
 check('切到 2 跳：压暗的变少、亮的变多', depth2.dim === 1 && depth2.near === 3, `1 跳 dim=${focus.dim} → 2 跳 dim=${depth2.dim}`)
 
@@ -272,4 +272,4 @@ const failed = results.filter((r) => !r.ok)
 console.log(`\n结果：${results.length - failed.length}/${results.length} 通过，控制台错误 ${consoleErrors.length}，异常 ${exceptions.length}`)
 
 ws.close()
-process.exit(failed.length || exceptions.length ? 1 : 0)
+process.exit(failed.length || exceptions.length || consoleErrors.length ? 1 : 0)
