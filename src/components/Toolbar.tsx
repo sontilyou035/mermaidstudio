@@ -13,6 +13,7 @@ export function Toolbar() {
   const setRightTab = useStore((s) => s.setRightTab)
   const toggleTheme = useStore((s) => s.toggleTheme)
   const skin = useStore((s) => s.settings.skin)
+  const viewMode = useStore((s) => s.settings.viewMode)
   const renameDoc = useStore((s) => s.renameDoc)
   const newDoc = useStore((s) => s.newDoc)
   const openSaveDialog = useStore((s) => s.openSaveDialog)
@@ -63,21 +64,46 @@ export function Toolbar() {
       </div>
 
       <div className="ms-topbar__group">
-        <button className="ms-btn ms-btn--sm" onClick={runAutoLayout} title="用 dagre 重新排版">
-          ✦ 自动布局
-        </button>
-        <select
-          className="ms-input ms-input--compact"
-          value={doc.direction}
-          onChange={(e) => setDirection(e.target.value as Direction)}
-          title="布局方向"
-        >
-          {Object.entries(DIRECTION_LABELS).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v}
-            </option>
-          ))}
-        </select>
+        <div className="ms-seg" role="group" aria-label="主视图">
+          <button
+            className={`ms-seg__btn${viewMode === 'flow' ? ' is-active' : ''}`}
+            data-view="flow"
+            onClick={() => updateSettings({ viewMode: 'flow' })}
+            title="流程图：可编辑的主视图"
+          >
+            流程图
+          </button>
+          <button
+            className={`ms-seg__btn${viewMode === 'graph' ? ' is-active' : ''}`}
+            data-view="graph"
+            onClick={() => updateSettings({ viewMode: 'graph' })}
+            title="关系图谱：只读，从焦点表看附近几跳"
+          >
+            关系图谱
+          </button>
+        </div>
+      </div>
+
+      <div className="ms-topbar__group">
+        {viewMode === 'flow' ? (
+          <>
+            <button className="ms-btn ms-btn--sm" onClick={runAutoLayout} title="用 dagre 重新排版">
+              ✦ 自动布局
+            </button>
+            <select
+              className="ms-input ms-input--compact"
+              value={doc.direction}
+              onChange={(e) => setDirection(e.target.value as Direction)}
+              title="布局方向"
+            >
+              {Object.entries(DIRECTION_LABELS).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </>
+        ) : null}
         <button className="ms-btn ms-btn--sm" onClick={() => getRfInstance()?.fitView({ padding: 0.25, duration: 300 })}>
           适应视图
         </button>

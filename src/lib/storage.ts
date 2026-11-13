@@ -28,6 +28,8 @@ export interface Settings {
   renderEngine: 'pele' | 'mermaid'
   /** 界面皮肤：warm（暖白 + 陶土橙，默认）/ cool（冷灰蓝） */
   skin: 'warm' | 'cool'
+  /** 主视图：流程图（可编辑）/ 关系图谱（只读诊断镜） */
+  viewMode: 'flow' | 'graph'
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -41,6 +43,7 @@ export const DEFAULT_SETTINGS: Settings = {
   mdConvention: '虚线=待确认（见「存疑清单」逐条确认），实线=已确认；节点样式类见 classDef',
   renderEngine: 'pele',
   skin: 'warm',
+  viewMode: 'flow',
 }
 
 interface IndexShape {

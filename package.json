@@ -24,6 +24,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --port 5274",
+    "test:unit": "node scripts/unit-graph.mjs",
     "typecheck": "tsc --noEmit"
   }
 }

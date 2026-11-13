@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Toolbar } from './components/Toolbar'
 import { Palette } from './components/Palette'
 import { Canvas } from './components/Canvas'
+import { GraphView } from './components/GraphView'
 import { Inspector } from './components/Inspector'
 import { CodePanel, MermaidPreview } from './components/CodePanel'
 import { BlocksPanel } from './components/BlocksPanel'
@@ -15,6 +16,7 @@ import { useStore } from './store'
 export default function App() {
   const theme = useStore((s) => s.settings.theme)
   const skin = useStore((s) => s.settings.skin)
+  const viewMode = useStore((s) => s.settings.viewMode)
   const rightOpen = useStore((s) => s.rightOpen)
   const rightTab = useStore((s) => s.rightTab)
   const setRightTab = useStore((s) => s.setRightTab)
@@ -104,8 +106,8 @@ export default function App() {
       <div className="ms-main">
         {paletteOpen ? <Palette /> : null}
         <div className="ms-canvas-col">
-          <Canvas />
-          <TimelinePanel />
+          {viewMode === 'graph' ? <GraphView /> : <Canvas />}
+          {viewMode === 'flow' ? <TimelinePanel /> : null}
         </div>
         {!paletteOpen ? (
           <button className="ms-rail ms-rail--left" onClick={togglePalette} title="展开节点块（左栏）" aria-label="展开左栏">
