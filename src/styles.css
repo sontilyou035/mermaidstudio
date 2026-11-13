@@ -2415,11 +2415,14 @@ body.ms-space-pan .react-flow__pane.dragging {
 
 .ms-gdot {
   position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 4px 6px;
+  padding: 4px 8px;
   cursor: pointer;
   user-select: none;
   transition: opacity 0.18s ease;

@@ -45,7 +45,7 @@ const DEFAULTS: Required<Omit<LayoutOptions, 'radiusOf' | 'rootId'>> = {
 }
 
 /** 没有焦点时选一个根：度数最高，同分取模型里靠前的 */
-function pickRoot(model: GraphModel): string | null {
+export function defaultRootId(model: GraphModel): string | null {
   let bestId: string | null = null
   let bestDegree = -1
   for (const n of model.nodes) {
@@ -75,7 +75,7 @@ export function layoutGraph(model: GraphModel, opts: LayoutOptions = {}): Map<st
   if (!count) return out
 
   const root =
-    opts.rootId && model.neighbors.has(opts.rootId) ? opts.rootId : pickRoot(model)
+    opts.rootId && model.neighbors.has(opts.rootId) ? opts.rootId : defaultRootId(model)
   if (!root) return out
 
   const hops = bfsHops(model, root)

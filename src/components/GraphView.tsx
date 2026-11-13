@@ -6,12 +6,13 @@ import {
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
+  type NodeChange,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useStore } from '../store'
 import { getRfInstance, setRfInstance } from '../lib/rf'
 import { bfsHops, deriveGraphModel, graphSignature } from '../lib/graphModel'
-import { CARD_RADIUS, DOT_RADIUS, DEFAULT_SEED, layoutGraph } from '../lib/graphLayout'
+import { CARD_RADIUS, DOT_RADIUS, DEFAULT_SEED, defaultRootId, layoutGraph } from '../lib/graphLayout'
 import { GraphDotNode, type GraphDotNodeModel } from './GraphDotNode'
 import { GraphEdgeView, type GraphEdgeModel } from './GraphEdgeView'
 
@@ -28,6 +29,24 @@ const BUSY_NODES = 250
  */
 const FOCUS_DELAY_MS = 280
 
+/** 节点在画布上的固定占位框：圆点在顶部正中，名字在下面 */
+const NODE_W = 140
+const NODE_H = 56
+/** 圆点中心距节点框顶部的距离 */
+const DOT_ANCHOR_Y = 8
+
+type Point = { x: number; y: number }
+
+/** 布局算的是"圆点中心"，React Flow 的 position 是框的左上角 */
+function toNodePosition(center: Point): Point {
+  return { x: center.x - NODE_W / 2, y: center.y - DOT_ANCHOR_Y }
+}
+
+/** 反算：拖动后的框左上角 → 圆点中心 */
+function toAnchor(position: Point): Point {
+  return { x: position.x + NODE_W / 2, y: position.y + DOT_ANCHOR_Y }
+}
+
 type Depth = 1 | 2 | 'all'
 
 function GraphViewInner() {
@@ -35,18 +54,34 @@ function GraphViewInner() {
   const selectOnly = useStore((s) => s.selectOnly)
   const clearSelection = useStore((s) => s.clearSelection)
   const updateSettings = useStore((s) => s.updateSettings)
-  const { fitView, setCenter, getViewport } = useReactFlow()
+  const { setCenter } = useReactFlow()
+
+  /**
+   * 打开图谱时默认就有一个焦点：流程图里选中的表，否则取度数最高的表。
+   * 没有焦点时，一张链式的图会被摆成一条横线——那不叫"圆心聚焦"。
+   */
+  const [initialFocus] = useState<string | null>(() => {
+    const initialModel = deriveGraphModel(doc)
+    const selected = doc.nodes.find((n) => n.selected)?.id
+    if (selected && initialModel.nodes.some((n) => n.id === selected)) return selected
+    return defaultRootId(initialModel)
+  })
 
   /** 高亮用的焦点：立即生效 */
-  const [focusId, setFocusId] = useState<string | null>(null)
+  const [focusId, setFocusId] = useState<string | null>(initialFocus)
   /** 布局用的焦点：延迟生效，给双击留出窗口 */
-  const [layoutFocus, setLayoutFocus] = useState<string | null>(null)
+  const [layoutFocus, setLayoutFocus] = useState<string | null>(initialFocus)
   const focusTimer = useRef<number | null>(null)
   const [depth, setDepth] = useState<Depth>(1)
   const [onlyOpen, setOnlyOpen] = useState(false)
   const [expanded, setExpanded] = useState<string[]>([])
   const [seed, setSeed] = useState(DEFAULT_SEED)
   const expandedKey = expanded.join(',')
+  /**
+   * 手动拖动过的点：只存在视图里（不写回文档），布局重算时优先用这里的坐标。
+   * 这是"拖节点 = 把节点摆在我想看的位置"，不是编辑图结构。
+   */
+  const [overrides, setOverrides] = useState<Record<string, { x: number; y: number }>>({})
 
   const model = useMemo(() => deriveGraphModel(doc), [doc.nodes, doc.edges])
   const signature = useMemo(() => graphSignature(model), [model])
@@ -75,7 +110,30 @@ function GraphViewInner() {
       setLayoutFocus(null)
       return
     }
-    focusTimer.current = window.setTimeout(() => setLayoutFocus(id), FOCUS_DELAY_MS)
+    focusTimer.current = window.setTimeout(() => {
+      // 焦点要被钉到圆心，所以在真正重排的那一刻，才让出它自己的手动位置。
+      // 提前让出的话，节点会在第一下点击和双击的第二下之间跳走。
+      setOverrides((prev) => {
+        if (!(id in prev)) return prev
+        const next = { ...prev }
+        delete next[id]
+        return next
+      })
+      setLayoutFocus(id)
+    }, FOCUS_DELAY_MS)
+  }, [])
+
+  /** 拖动节点：只更新视图内的坐标，不碰文档、不进撤销栈 */
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    const moves = changes.filter(
+      (c): c is Extract<NodeChange, { type: 'position' }> => c.type === 'position' && Boolean(c.position),
+    )
+    if (!moves.length) return
+    setOverrides((prev) => {
+      const next = { ...prev }
+      for (const m of moves) if (m.position) next[m.id] = toAnchor(m.position)
+      return next
+    })
   }, [])
 
   useEffect(
@@ -103,8 +161,9 @@ function GraphViewInner() {
         return {
           id: n.id,
           type: 'dot',
-          position: positions.get(n.id) ?? { x: 0, y: 0 },
-          draggable: false,
+          position: toNodePosition(overrides[n.id] ?? positions.get(n.id) ?? { x: 0, y: 0 }),
+          width: NODE_W,
+          height: NODE_H,
           connectable: false,
           data: {
             label: n.label,
@@ -118,7 +177,7 @@ function GraphViewInner() {
           },
         }
       }),
-    [model, hops, focusId, depth, positions, expanded, toggleExpand],
+    [model, hops, focusId, depth, positions, expanded, toggleExpand, overrides],
   )
 
   const dimIds = useMemo(
@@ -149,22 +208,41 @@ function GraphViewInner() {
   // 卸载时把单例清掉：否则"双击回流程图"的第一帧会对着已经卸载的画布 fitView
   useEffect(() => () => setRfInstance(null), [])
 
-  // 挂载 / 重排：把整张图装进视口。
-  // 展开不重新 fit——展开一张卡片就把镜头拉远，会毁掉"焦点在圆心"这件事
+  /**
+   * 视口：有焦点时把焦点（布局原点）摆到画布正中心，没焦点时把整张图摆中间。
+   * 缩放自己算，不用 fitView 之后再 setCenter——fitView 带动画、promise 不等动画结束，
+   * 后到的 setCenter 会被它的动画覆盖掉（这就是之前怎么调都偏一截的原因）。
+   */
   useEffect(() => {
-    fitView({ padding: 0.3, duration: 260, maxZoom: 1.15 })
-  }, [seed, fitView])
-
-  // 换焦点：焦点被钉在原点，所以把原点摆到视口中心，这就是"圆心聚焦"；
-  // 取消焦点时回到"整张图装进视口"
-  useEffect(() => {
-    if (!layoutFocus) {
-      fitView({ padding: 0.3, duration: 260, maxZoom: 1.15 })
-      return
+    const container = document.querySelector<HTMLElement>('.ms-canvas--graph .react-flow')
+    const width = container?.clientWidth ?? 900
+    const height = container?.clientHeight ?? 600
+    let minX = Infinity
+    let maxX = -Infinity
+    let minY = Infinity
+    let maxY = -Infinity
+    for (const n of model.nodes) {
+      const c = overrides[n.id] ?? positions.get(n.id)
+      if (!c) continue
+      minX = Math.min(minX, c.x)
+      maxX = Math.max(maxX, c.x)
+      minY = Math.min(minY, c.y)
+      maxY = Math.max(maxY, c.y)
     }
-    const zoom = Math.max(0.6, Math.min(1.2, getViewport().zoom))
-    setCenter(0, 0, { zoom, duration: 260 })
-  }, [layoutFocus, setCenter, getViewport, fitView])
+    if (!Number.isFinite(minX)) return
+    const PAD = 80
+    const zoom = Math.max(
+      0.1,
+      Math.min(
+        1.15,
+        (width - PAD * 2) / Math.max(1, maxX - minX + NODE_W),
+        (height - PAD * 2) / Math.max(1, maxY - minY + NODE_H),
+      ),
+    )
+    if (layoutFocus) setCenter(0, 0, { zoom, duration: 200 })
+    else setCenter((minX + maxX) / 2, (minY + maxY) / 2, { zoom, duration: 200 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layoutFocus, seed, setCenter])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -216,6 +294,7 @@ function GraphViewInner() {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onInit={(inst) => setRfInstance(inst)}
+        onNodesChange={onNodesChange}
         onNodeClick={(e, n) => {
           // 双击的第二下 click 带 detail=2：用它回到流程图并定位（比 onNodeDoubleClick 稳）
           if (e.detail >= 2) {
@@ -231,14 +310,12 @@ function GraphViewInner() {
           scheduleLayoutFocus(null)
           clearSelection()
         }}
-        nodesDraggable={false}
         nodesConnectable={false}
         edgesFocusable={false}
         elementsSelectable={false}
         minZoom={0.1}
         maxZoom={2.5}
-        fitView
-        fitViewOptions={{ padding: 0.3, maxZoom: 1.15 }}
+        /* 不传 fitView：初始化时的自动 fit 会把下面"把焦点摆到圆心"的 setCenter 覆盖掉 */
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.4} color="var(--grid-dot)" />
@@ -272,7 +349,14 @@ function GraphViewInner() {
           <input type="checkbox" checked={onlyOpen} onChange={(e) => setOnlyOpen(e.target.checked)} />
           只看待确认
         </label>
-        <button className="ms-btn ms-btn--sm" onClick={() => setSeed(Date.now() % 100000)} title="重新排一次">
+        <button
+          className="ms-btn ms-btn--sm"
+          onClick={() => {
+            setOverrides({})
+            setSeed(Date.now() % 100000)
+          }}
+          title="重新排一次（清掉手动摆放）"
+        >
           重排
         </button>
       </div>

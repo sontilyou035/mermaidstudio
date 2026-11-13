@@ -144,6 +144,25 @@ check('切到关系图谱（流程图卸载，只剩一个画布）', mounted.gr
 check('视图模式写进 settings', mounted.mode === 'graph', `mode=${mounted.mode}`)
 check('只画实体表：4 个点', mounted.dots === 4, `dots=${mounted.dots}`)
 
+await sleep(700)
+const opened = await evaluate(`(() => {
+  const canvas = document.querySelector('.ms-canvas--graph').getBoundingClientRect()
+  const focus = document.querySelector('.ms-gdot.is-focus')
+  if (!focus) return { focus: 0 }
+  const dot = focus.querySelector('.ms-gdot__dot').getBoundingClientRect()
+  return {
+    focus: document.querySelectorAll('.ms-gdot.is-focus').length,
+    id: focus.getAttribute('data-id'),
+    dx: Math.round(dot.left + dot.width / 2 - (canvas.left + canvas.width / 2)),
+    dy: Math.round(dot.top + dot.height / 2 - (canvas.top + canvas.height / 2)),
+  }
+})()`)
+check(
+  '打开图谱就有一个焦点（度数最高的表），并且落在圆心',
+  opened.focus === 1 && opened.id === fixture.ids.items && Math.abs(opened.dx) <= 80 && Math.abs(opened.dy) <= 80,
+  JSON.stringify(opened),
+)
+
 const visible = await evaluate(`(() => {
   const ids = [...document.querySelectorAll('.ms-gdot')].map(el => el.getAttribute('data-id'))
   return {
@@ -158,6 +177,56 @@ check(
   visible.groupBox === false && visible.shipping === false && visible.note === false && visible.ids.length === 4,
   JSON.stringify(visible),
 )
+
+/* ---------- 拖动节点：移动的是这个点，不是画布，也不写文档 ---------- */
+
+const dragStart = await evaluate(`(() => {
+  const dot = document.querySelector('.ms-gdot[data-id="' + ${JSON.stringify(fixture.ids.coupons)} + '"] .ms-gdot__dot').getBoundingClientRect()
+  const other = document.querySelector('.ms-gdot[data-id="' + ${JSON.stringify(fixture.ids.audit)} + '"]').getBoundingClientRect()
+  return {
+    x: Math.round(dot.left + dot.width / 2),
+    y: Math.round(dot.top + dot.height / 2),
+    otherX: Math.round(other.x),
+    doc: JSON.stringify(window.__ms.store.getState().doc.nodes.map((n) => [n.id, n.position.x, n.position.y])),
+    focus: document.querySelector('.ms-gdot.is-focus')?.getAttribute('data-id') ?? null,
+  }
+})()`)
+await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: dragStart.x, y: dragStart.y })
+await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: dragStart.x, y: dragStart.y, button: 'left', clickCount: 1, buttons: 1 })
+for (const k of [1, 2, 3, 4]) {
+  await send('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    x: dragStart.x + k * 25,
+    y: dragStart.y + k * 15,
+    button: 'left',
+    buttons: 1,
+  })
+  await sleep(30)
+}
+await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: dragStart.x + 100, y: dragStart.y + 60, button: 'left', clickCount: 1, buttons: 0 })
+await sleep(500)
+
+const dragged = await evaluate(`(() => {
+  const dot = document.querySelector('.ms-gdot[data-id="' + ${JSON.stringify(fixture.ids.coupons)} + '"] .ms-gdot__dot').getBoundingClientRect()
+  const other = document.querySelector('.ms-gdot[data-id="' + ${JSON.stringify(fixture.ids.audit)} + '"]').getBoundingClientRect()
+  return {
+    x: Math.round(dot.left + dot.width / 2),
+    y: Math.round(dot.top + dot.height / 2),
+    otherX: Math.round(other.x),
+    doc: JSON.stringify(window.__ms.store.getState().doc.nodes.map((n) => [n.id, n.position.x, n.position.y])),
+    focus: document.querySelector('.ms-gdot.is-focus')?.getAttribute('data-id') ?? null,
+  }
+})()`)
+check(
+  '拖动节点只移动这个点（画布不平移、焦点不变）',
+  // 拖动激活会吃掉第一步位移（真实鼠标步长很小，肉眼无感），所以给 ±30 容差
+  Math.abs(dragged.x - dragStart.x - 100) <= 30 &&
+    Math.abs(dragged.y - dragStart.y - 60) <= 30 &&
+    dragged.otherX === dragStart.otherX &&
+    dragged.focus === dragStart.focus,
+  JSON.stringify({ dx: dragged.x - dragStart.x, dy: dragged.y - dragStart.y, otherSame: dragged.otherX === dragStart.otherX }),
+)
+check('拖动节点不写回文档坐标', dragged.doc === dragStart.doc)
 
 const edgeMarks = await evaluate(`(() => ({
   dashed: document.querySelectorAll('.ms-gedge.is-dashed').length,

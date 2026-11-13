@@ -69,7 +69,7 @@ function GraphDotNodeInner({ id, data }: NodeProps<GraphDotNodeModel>) {
       ) : null}
 
       <button
-        className="ms-gdot__toggle"
+        className="ms-gdot__toggle nodrag"
         title={data.expanded ? '收起字段' : '展开字段'}
         aria-label={data.expanded ? '收起字段' : '展开字段'}
         onClick={(e) => {
