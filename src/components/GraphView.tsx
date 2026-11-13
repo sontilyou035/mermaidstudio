@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Background,
   BackgroundVariant,
@@ -21,6 +21,13 @@ const edgeTypes = { graph: GraphEdgeView }
 /** 超过这个规模，点会开始糊在一起——提示一下，但不拦着 */
 const BUSY_NODES = 250
 
+/**
+ * 换焦点后延迟一点再重排。
+ * 立即重排的话，单击的瞬间节点就挪到光标外，真实的双击永远打不中；
+ * 延迟窗口内收到第二下 click（detail=2）就当作双击，撤销这次重排。
+ */
+const FOCUS_DELAY_MS = 280
+
 type Depth = 1 | 2 | 'all'
 
 function GraphViewInner() {
@@ -28,9 +35,13 @@ function GraphViewInner() {
   const selectOnly = useStore((s) => s.selectOnly)
   const clearSelection = useStore((s) => s.clearSelection)
   const updateSettings = useStore((s) => s.updateSettings)
-  const { fitView } = useReactFlow()
+  const { fitView, setCenter, getViewport } = useReactFlow()
 
+  /** 高亮用的焦点：立即生效 */
   const [focusId, setFocusId] = useState<string | null>(null)
+  /** 布局用的焦点：延迟生效，给双击留出窗口 */
+  const [layoutFocus, setLayoutFocus] = useState<string | null>(null)
+  const focusTimer = useRef<number | null>(null)
   const [depth, setDepth] = useState<Depth>(1)
   const [onlyOpen, setOnlyOpen] = useState(false)
   const [expanded, setExpanded] = useState<string[]>([])
@@ -46,11 +57,32 @@ function GraphViewInner() {
     () =>
       layoutGraph(model, {
         seed,
+        // 焦点在圆心：它 0 跳，邻居一圈一圈往外
+        rootId: layoutFocus,
         // 展开成卡片的点要占更大的位置，否则会压住邻居
         radiusOf: (id) => (expanded.includes(id) ? CARD_RADIUS : DOT_RADIUS),
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [signature, seed, expandedKey],
+    [signature, seed, expandedKey, layoutFocus],
+  )
+
+  const scheduleLayoutFocus = useCallback((id: string | null) => {
+    if (focusTimer.current) {
+      clearTimeout(focusTimer.current)
+      focusTimer.current = null
+    }
+    if (id === null) {
+      setLayoutFocus(null)
+      return
+    }
+    focusTimer.current = window.setTimeout(() => setLayoutFocus(id), FOCUS_DELAY_MS)
+  }, [])
+
+  useEffect(
+    () => () => {
+      if (focusTimer.current) clearTimeout(focusTimer.current)
+    },
+    [],
   )
   const hops = useMemo(
     () => (focusId ? bfsHops(model, focusId) : new Map<string, number>()),
@@ -117,10 +149,22 @@ function GraphViewInner() {
   // 卸载时把单例清掉：否则"双击回流程图"的第一帧会对着已经卸载的画布 fitView
   useEffect(() => () => setRfInstance(null), [])
 
-  // 重排后把整张图重新装进视口；聚焦只压暗，不动视口
+  // 挂载 / 重排：把整张图装进视口。
+  // 展开不重新 fit——展开一张卡片就把镜头拉远，会毁掉"焦点在圆心"这件事
   useEffect(() => {
     fitView({ padding: 0.3, duration: 260, maxZoom: 1.15 })
-  }, [seed, expandedKey, fitView])
+  }, [seed, fitView])
+
+  // 换焦点：焦点被钉在原点，所以把原点摆到视口中心，这就是"圆心聚焦"；
+  // 取消焦点时回到"整张图装进视口"
+  useEffect(() => {
+    if (!layoutFocus) {
+      fitView({ padding: 0.3, duration: 260, maxZoom: 1.15 })
+      return
+    }
+    const zoom = Math.max(0.6, Math.min(1.2, getViewport().zoom))
+    setCenter(0, 0, { zoom, duration: 260 })
+  }, [layoutFocus, setCenter, getViewport, fitView])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -132,16 +176,21 @@ function GraphViewInner() {
       else if (e.key === '0') setDepth('all')
       else if (e.key === 'Escape') {
         setFocusId(null)
+        scheduleLayoutFocus(null)
         clearSelection()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [clearSelection])
+  }, [clearSelection, scheduleLayoutFocus])
 
   /** 双击回流程图并定位这张表：图谱卸载、画布挂载之后才能 fitView */
   const jumpToFlow = useCallback(
     (id: string) => {
+      if (focusTimer.current) {
+        clearTimeout(focusTimer.current)
+        focusTimer.current = null
+      }
       updateSettings({ viewMode: 'flow' })
       let tries = 0
       const tick = () => {
@@ -174,10 +223,12 @@ function GraphViewInner() {
             return
           }
           setFocusId(n.id)
+          scheduleLayoutFocus(n.id)
           selectOnly([n.id])
         }}
         onPaneClick={() => {
           setFocusId(null)
+          scheduleLayoutFocus(null)
           clearSelection()
         }}
         nodesDraggable={false}

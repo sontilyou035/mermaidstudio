@@ -197,6 +197,16 @@ test('根钉在原点，同一份模型每次排出来一模一样', () => {
   assert.equal(first.size, 4)
 })
 
+test('给了焦点就以它为中心：它钉在原点，跳数从它开始数', () => {
+  const model = chainModel() // a—b—c—d，外加 a—c；度数最高的是 c
+  const pos = layoutGraph(model, { rootId: 't_a' })
+
+  assert.deepEqual(pos.get('t_a'), { x: 0, y: 0 })
+  const r = (id) => radiusOf(pos.get(id))
+  // 从 a 看：b、c 是 1 跳，d 是 2 跳
+  assert.ok(r('t_d') > r('t_b'), `d 应当比 b 更远：d=${r('t_d').toFixed(1)} b=${r('t_b').toFixed(1)}`)
+})
+
 test('跳数决定离根多远：1 跳比 2 跳更近', () => {
   const model = chainModel()
   const pos = layoutGraph(model)

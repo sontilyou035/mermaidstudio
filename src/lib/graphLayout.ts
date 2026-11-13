@@ -5,10 +5,11 @@ import { bfsHops, type GraphModel } from './graphModel.ts'
  * 不碰文档、不碰 React Flow —— 坐标只属于视图。
  *
  * 算法：BFS 跳数环做初值 → 力导向松弛（斥力 + 连边弹簧 + 碰撞 + 环约束 + 弱重力），
- * 根（度数最高的表）钉在原点。固定随机种子，同一份模型每次排出完全相同的图。
+ * 根钉在原点。固定随机种子，同一份模型每次排出完全相同的图。
  *
- * 注意：布局**不随焦点变化**。聚焦只压暗，不动坐标——否则单击之后节点会从
- * 光标下面挪走，"看一张表"就变成了"猜它刚才在哪"。
+ * 根就是焦点（`rootId`）：焦点在圆心，1 跳一圈，2 跳一圈。
+ * 视图调用它时要延迟一点再换焦点，否则单击会立刻把节点挪到光标外、双击就废了
+ * （见 GraphView 的 FOCUS_DELAY_MS）。
  */
 
 export interface Point {
@@ -23,19 +24,21 @@ export interface LayoutOptions {
   radius?: number
   /** 逐个节点的占位半径：展开成表卡片的点要占更大的位置，否则会压住邻居 */
   radiusOf?: (id: string) => number
+  /** 焦点：钉在原点，并从它开始数跳数；缺省取度数最高的表 */
+  rootId?: string | null
   iterations?: number
   seed?: number
 }
 
 /** 点的占位半径 */
-export const DOT_RADIUS = 64
+export const DOT_RADIUS = 32
 /** 展开成表卡片时的占位半径（卡片约 230×120，取半对角线） */
-export const CARD_RADIUS = 130
+export const CARD_RADIUS = 100
 /** 固定种子：同一份图每次摆出来一样 */
 export const DEFAULT_SEED = 20261113
 
-const DEFAULTS: Required<Omit<LayoutOptions, 'radiusOf'>> = {
-  spacing: 160,
+const DEFAULTS: Required<Omit<LayoutOptions, 'radiusOf' | 'rootId'>> = {
+  spacing: 100,
   radius: DOT_RADIUS,
   iterations: 320,
   seed: DEFAULT_SEED,
@@ -71,7 +74,8 @@ export function layoutGraph(model: GraphModel, opts: LayoutOptions = {}): Map<st
   const count = model.nodes.length
   if (!count) return out
 
-  const root = pickRoot(model)
+  const root =
+    opts.rootId && model.neighbors.has(opts.rootId) ? opts.rootId : pickRoot(model)
   if (!root) return out
 
   const hops = bfsHops(model, root)

@@ -5,7 +5,7 @@ import { tableRows } from '../blocks/registry'
 /** 分组调色板：同一个分组同一个颜色，分组多于 7 个就循环（不静默丢掉） */
 const GROUP_COLORS = ['#2563eb', '#059669', '#d97706', '#7c3aed', '#e11d48', '#0d9488', '#64748b']
 
-/** 图谱里的一个点：表名 + 字段数徽标；展开后变成只读的表卡片 */
+/** 图谱里的一个点：Obsidian 式圆点 + 下方的名字；展开时在下面挂一张只读表卡片 */
 export interface GraphDotData extends Record<string, unknown> {
   label: string
   columns: string
@@ -41,6 +41,11 @@ function GraphDotNodeInner({ id, data }: NodeProps<GraphDotNodeModel>) {
       <Handle type="target" position={Position.Left} className="ms-gdot__handle" isConnectable={false} />
       <Handle type="source" position={Position.Right} className="ms-gdot__handle" isConnectable={false} />
 
+      <div className="ms-gdot__body">
+        <span className="ms-gdot__dot" />
+        <span className="ms-gdot__label">{data.label}</span>
+      </div>
+
       {data.expanded ? (
         <div className="ms-gcard">
           <div className="ms-gcard__head">
@@ -61,17 +66,7 @@ function GraphDotNodeInner({ id, data }: NodeProps<GraphDotNodeModel>) {
             })}
           </ul>
         </div>
-      ) : (
-        <div className="ms-gdot__body">
-          <span className="ms-gdot__dot" />
-          <span className="ms-gdot__label">{data.label}</span>
-          {rows.length > 0 ? (
-            <span className="ms-gdot__badge" title={`${rows.length} 个字段`}>
-              {rows.length}
-            </span>
-          ) : null}
-        </div>
-      )}
+      ) : null}
 
       <button
         className="ms-gdot__toggle"

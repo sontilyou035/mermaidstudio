@@ -181,6 +181,23 @@ const focus = await evaluate(`(() => ({
 check('单击聚焦：1 个焦点、2 跳以外压暗', focus.focus === 1 && focus.dim === 2 && focus.near === 2, JSON.stringify(focus))
 check('聚焦同步检查器选中', focus.selected.length === 1 && focus.selected[0] === fixture.ids.orders, JSON.stringify(focus.selected))
 
+await sleep(900)
+const centered = await evaluate(`(() => {
+  const canvas = document.querySelector('.ms-canvas--graph').getBoundingClientRect()
+  const dot = document.querySelector('.ms-gdot[data-id="' + ${JSON.stringify(fixture.ids.orders)} + '"] .ms-gdot__dot').getBoundingClientRect()
+  return {
+    dx: Math.round(dot.left + dot.width / 2 - (canvas.left + canvas.width / 2)),
+    dy: Math.round(dot.top + dot.height / 2 - (canvas.top + canvas.height / 2)),
+    labelBelow: document.querySelector('.ms-gdot[data-id="' + ${JSON.stringify(fixture.ids.orders)} + '"] .ms-gdot__label').getBoundingClientRect().top
+      >= dot.top + dot.height - 1,
+  }
+})()`)
+check(
+  '焦点被摆到圆心（±80px），名字在圆点下面',
+  Math.abs(centered.dx) <= 80 && Math.abs(centered.dy) <= 80 && centered.labelBelow === true,
+  JSON.stringify(centered),
+)
+
 await evaluate(`document.querySelector('[data-depth="2"]').click()`)
 await sleep(300)
 const depth2 = await evaluate(`(() => ({
