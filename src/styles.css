@@ -1,0 +1,2401 @@
+:root {
+  /* pele 渲染器主题变量（浅色） */
+  --pele-bg: #eef1f6;
+  --pele-fg: #1e293b;
+  --pele-muted: #64748b;
+  --pele-line: #475569;
+  --pele-surface: #f8fafc;
+  --pele-surface-alt: #eef2f7;
+  --pele-border: #b9c4d4;
+  --pele-accent: #2563eb;
+  --pele-radius: 6px;
+  --bg: #eef1f6;
+  --panel: #f7f9fc;
+  --panel-2: #ffffff;
+  --text: #1e293b;
+  --text-dim: #64748b;
+  --border: #d8e0ea;
+  --border-strong: #b9c4d4;
+  --accent: #2563eb;
+  --accent-soft: #dbeafe;
+  --danger: #dc2626;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 6px 18px rgba(15, 23, 42, 0.06);
+  --grid-dot: #cbd5e1;
+  --group-fill: rgba(148, 163, 184, 0.12);
+  --minimap-mask: rgba(148, 163, 184, 0.16);
+  --radius: 12px;
+  /* Onevra 风：柔和投影（SVG 形状用 filter，卡片节点用 box-shadow） */
+  --node-filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.07)) drop-shadow(0 6px 14px rgba(15, 23, 42, 0.07));
+  --node-filter-hover: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.1)) drop-shadow(0 10px 22px rgba(15, 23, 42, 0.11));
+  --node-box-shadow: 0 1px 2px rgba(15, 23, 42, 0.07), 0 6px 14px rgba(15, 23, 42, 0.07);
+  --node-box-shadow-hover: 0 1px 3px rgba(15, 23, 42, 0.1), 0 10px 22px rgba(15, 23, 42, 0.11);
+  --node-ring: rgba(37, 99, 235, 0.7);
+}
+
+[data-theme='dark'] {
+  --pele-bg: #0b1120;
+  --pele-fg: #e5e9f0;
+  --pele-muted: #94a3b8;
+  --pele-line: #94a3b8;
+  --pele-surface: #172033;
+  --pele-surface-alt: #1e293b;
+  --pele-border: #3b4a63;
+  --pele-accent: #60a5fa;
+  --bg: #0b1120;
+  --panel: #111827;
+  --panel-2: #172033;
+  --text: #e5e9f0;
+  --text-dim: #94a3b8;
+  --border: #26334a;
+  --border-strong: #3b4a63;
+  --accent: #60a5fa;
+  --accent-soft: #1e3a8a;
+  --danger: #f87171;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --grid-dot: #263349;
+  --group-fill: rgba(148, 163, 184, 0.1);
+  --minimap-mask: rgba(15, 23, 42, 0.55);
+  --node-filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45)) drop-shadow(0 6px 16px rgba(0, 0, 0, 0.4));
+  --node-filter-hover: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.45));
+  --node-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 6px 16px rgba(0, 0, 0, 0.4);
+  --node-box-shadow-hover: 0 1px 3px rgba(0, 0, 0, 0.5), 0 10px 24px rgba(0, 0, 0, 0.45);
+  --node-ring: rgba(96, 165, 250, 0.75);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.ms-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ---------------- 顶栏 ---------------- */
+
+.ms-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  z-index: 20;
+}
+
+.ms-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.ms-brand__mark {
+  color: var(--accent);
+  font-size: 16px;
+}
+
+.ms-brand__logo {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: block;
+  box-shadow: 0 1px 2px rgba(70, 55, 40, 0.18);
+}
+
+.ms-brand__name {
+  font-size: 13px;
+}
+
+.ms-topbar__group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ms-topbar__spacer {
+  flex: 1;
+}
+
+/* ---------------- 通用控件 ---------------- */
+
+.ms-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12.5px;
+  transition: background 0.15s, border-color 0.15s, transform 0.05s;
+  white-space: nowrap;
+}
+
+.ms-btn:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--accent-soft);
+}
+
+.ms-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.ms-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ms-btn--sm {
+  padding: 5px 9px;
+  font-size: 12px;
+}
+
+.ms-btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.ms-btn--primary:hover:not(:disabled) {
+  background: var(--accent);
+  filter: brightness(1.08);
+}
+
+.ms-btn--danger {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--border));
+}
+
+.ms-btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.ms-btn-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+
+.ms-mini {
+  padding: 3px 7px;
+  font-size: 11px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.ms-mini:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.ms-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.ms-icon-btn:hover {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.ms-icon-btn--danger:hover {
+  background: color-mix(in srgb, var(--danger) 15%, transparent);
+  color: var(--danger);
+}
+
+.ms-icon-btn--lg {
+  width: 32px;
+  height: 32px;
+  font-size: 15px;
+  border-color: var(--border);
+}
+
+.ms-input {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 12.5px;
+  font-family: inherit;
+}
+
+.ms-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.ms-input--search {
+  margin: 0 10px 8px;
+  width: calc(100% - 20px);
+}
+
+.ms-input--num {
+  width: 68px;
+  flex: 0 0 auto;
+}
+
+.ms-input--compact {
+  width: auto;
+  padding: 5px 6px;
+}
+
+.ms-input--docname {
+  width: 190px;
+  font-weight: 600;
+}
+
+.ms-textarea {
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+.ms-color {
+  width: 34px;
+  height: 28px;
+  padding: 2px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.ms-times {
+  color: var(--text-dim);
+}
+
+.ms-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  display: inline-block;
+}
+
+.ms-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* ---------------- 布局 ---------------- */
+
+.ms-main {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* 左右栏折叠后，边缘留一个细条用来展开（全视图查看时用） */
+.ms-rail {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 12;
+  width: 18px;
+  height: 64px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.ms-rail:hover {
+  color: var(--accent);
+  background: var(--panel);
+}
+
+.ms-rail--left {
+  left: 0;
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+}
+
+.ms-rail--right {
+  right: 0;
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+}
+
+.ms-palette__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ms-right-tabs__collapse {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.ms-palette {
+  width: 244px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ms-palette__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 10px 8px;
+}
+
+.ms-palette__title {
+  font-weight: 700;
+}
+
+.ms-palette__list {
+  flex: 1;
+  overflow: auto;
+  padding: 0 8px 8px;
+}
+
+.ms-palette__foot {
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+}
+
+.ms-group {
+  margin-bottom: 10px;
+}
+
+.ms-group__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 6px 4px;
+}
+
+.ms-group__count {
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+.ms-group__items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ms-block-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: var(--panel-2);
+  cursor: grab;
+  transition: border-color 0.15s, transform 0.1s;
+}
+
+.ms-block-item:hover {
+  border-color: var(--accent);
+}
+
+.ms-block-item:active {
+  cursor: grabbing;
+  transform: scale(0.99);
+}
+
+.ms-block-item__thumb {
+  display: inline-flex;
+  width: 34px;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.ms-block-item__name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ms-block-item__actions {
+  display: none;
+  gap: 2px;
+}
+
+.ms-block-item:hover .ms-block-item__actions {
+  display: inline-flex;
+}
+
+.ms-canvas {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+  background: var(--bg);
+}
+
+.ms-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  pointer-events: none;
+  text-align: center;
+}
+
+.ms-empty__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.ms-empty__hint {
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+.ms-right {
+  width: 320px;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 右侧面板自己的标签条（贴顶，内容在下面滚动） */
+.ms-right-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 2px;
+  padding: 8px 10px 6px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+/* 标签按内容宽排列，彼此只留 2px */
+.ms-right-tabs .ms-tab {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+}
+
+.ms-right-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* ---------------- 右侧面板 ---------------- */
+
+.ms-panel-body {
+  padding: 10px 12px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ms-panel-body--code,
+.ms-panel-body--preview {
+  height: 100%;
+}
+
+.ms-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  margin: 10px 0 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ms-section-title__count {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.ms-section-title__actions {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.ms-subsection {
+  margin-top: 8px;
+}
+
+.ms-subsection__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin: 10px 0 4px;
+}
+
+.ms-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+}
+
+.ms-row__label {
+  width: 74px;
+  flex: 0 0 auto;
+  color: var(--text-dim);
+}
+
+.ms-row__control {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.ms-hint {
+  color: var(--text-dim);
+  font-size: 11.5px;
+  line-height: 1.6;
+  margin: 4px 0;
+}
+
+.ms-muted {
+  color: var(--text-dim);
+  padding: 10px 4px;
+  line-height: 1.7;
+}
+
+.ms-kv {
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-top: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  word-break: break-all;
+}
+
+.ms-tab {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  padding: 5px 9px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.ms-tab.is-active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---------------- 画布节点 ---------------- */
+
+.ms-node {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.ms-node__body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 12px;
+  text-align: center;
+  max-width: 100%;
+}
+
+.ms-node__icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.ms-node__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  overflow: hidden;
+}
+
+.ms-node__line {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 11.5px;
+  opacity: 0.85;
+}
+
+.ms-node__line--main {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 1;
+}
+
+.ms-node__placeholder {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.ms-node__fields {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.ms-node__field {
+  font-size: 10.5px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.18);
+}
+
+.ms-node__input {
+  width: 100%;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 1px 4px;
+  font-size: 12.5px;
+  font-family: inherit;
+  text-align: center;
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.ms-node--group {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.ms-node__group-title {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-weight: 700;
+  font-size: 12.5px;
+}
+
+.ms-handle {
+  width: 9px !important;
+  height: 9px !important;
+  border-radius: 50% !important;
+  background: var(--panel-2) !important;
+  border: 2px solid var(--accent) !important;
+  opacity: 0.85;
+}
+
+.ms-handle:hover {
+  width: 13px !important;
+  height: 13px !important;
+  opacity: 1;
+}
+
+/* 所有节点：四个连接点默认隐藏，鼠标悬停在节点上才出现 */
+.ms-node .ms-handle {
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.ms-node:hover .ms-handle {
+  opacity: 0.85;
+}
+
+.ms-node .ms-handle:hover {
+  opacity: 1;
+}
+
+/* 选中一根连线时：两端节点的连接点常显，线实际用到的那个口再高亮一下 */
+.ms-node.is-ports-pinned .ms-handle {
+  opacity: 0.85;
+}
+
+.ms-node.is-ports-pinned .ms-handle.is-used {
+  opacity: 1;
+  background: var(--accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+.ms-edge-label {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  font-size: 11.5px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.ms-edge--animated {
+  stroke-dasharray: 6 5;
+  animation: ms-dash 0.6s linear infinite;
+}
+
+@keyframes ms-dash {
+  to {
+    stroke-dashoffset: -11;
+  }
+}
+
+.react-flow__controls-button {
+  background: var(--panel-2) !important;
+  border-bottom: 1px solid var(--border) !important;
+  fill: var(--text) !important;
+}
+
+/* ---------------- 弹窗 ---------------- */
+
+.ms-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+}
+
+.ms-modal__panel {
+  background: var(--panel);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  width: 560px;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ms-modal__panel--wide {
+  width: 980px;
+}
+
+.ms-modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ms-modal__title {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.ms-modal__sub {
+  color: var(--text-dim);
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+
+.ms-modal__grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 0;
+  overflow: auto;
+  min-height: 0;
+}
+
+.ms-modal__col {
+  padding: 12px 16px;
+  min-width: 0;
+}
+
+.ms-modal__col--preview {
+  border-left: 1px solid var(--border);
+  background: var(--panel-2);
+}
+
+.ms-modal__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.ms-shape-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.ms-shape-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  cursor: pointer;
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+
+.ms-shape-cell.is-active {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--accent-soft);
+}
+
+.ms-swatches {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+
+.ms-swatch {
+  width: 34px;
+  height: 30px;
+  border-radius: 9px;
+  border: 2px solid;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ms-emoji-row {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.ms-emoji {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 1px 2px;
+  border-radius: 5px;
+}
+
+.ms-emoji:hover {
+  background: var(--accent-soft);
+}
+
+.ms-listrow,
+.ms-fieldrow {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0;
+  align-items: center;
+}
+
+.ms-listrow {
+  grid-template-columns: 1fr 74px 78px 26px;
+}
+
+.ms-fieldrow {
+  grid-template-columns: 74px 1fr 74px 1.2fr 26px;
+}
+
+.ms-preview-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+  overflow: auto;
+}
+
+.ms-preview-node {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.ms-pre {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 4px 0;
+  max-height: 240px;
+  overflow: auto;
+}
+
+/* ---------------- 代码 / 预览 ---------------- */
+
+.ms-code-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ms-code {
+  flex: 1;
+  min-height: 320px;
+  width: 100%;
+  resize: none;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.ms-code:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.ms-details summary {
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 11.5px;
+}
+
+.ms-preview {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.ms-preview svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.ms-alert {
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.ms-alert--error {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  color: var(--danger);
+}
+
+/* ---------------- 文档 / 节点块列表 ---------------- */
+
+.ms-savebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ms-doclist,
+.ms-blocklist {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0;
+}
+
+.ms-docitem,
+.ms-blockrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+}
+
+.ms-docitem.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.ms-docitem__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.ms-docitem__name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ms-docitem__meta,
+.ms-blockrow__meta {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.ms-docitem__actions {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.ms-blockrow__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.ms-blockrow__name {
+  font-weight: 600;
+}
+
+/* ---------------- 菜单 / 提示 ---------------- */
+
+.ms-menu {
+  position: relative;
+}
+
+.ms-menu__pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  z-index: 50;
+}
+
+.ms-menu__item {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12.5px;
+}
+
+.ms-menu__item:hover {
+  background: var(--accent-soft);
+}
+
+.ms-toasts {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 200;
+  align-items: center;
+}
+
+.ms-toast {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  animation: ms-rise 0.2s ease;
+}
+
+.ms-toast--success {
+  border-color: #22c55e;
+}
+
+.ms-toast--error {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+@keyframes ms-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+code {
+  background: var(--accent-soft);
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* ---------------- 表格类节点 ---------------- */
+
+.ms-node--table {
+  display: block;
+  padding: 0;
+}
+
+.ms-table {
+  width: 100%;
+  height: 100%;
+  border: 2px solid;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 11.5px;
+}
+
+.ms-table__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-weight: 700;
+  font-size: 12.5px;
+  border-bottom: 2px solid;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.ms-table__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ms-table__rows {
+  flex: 1;
+  overflow: hidden;
+  padding: 2px 0;
+}
+
+.ms-table__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 1px 10px;
+  line-height: 18px;
+}
+
+.ms-table__row.is-pk {
+  background: color-mix(in srgb, #f59e0b 22%, transparent);
+}
+
+.ms-table__col {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ms-table__type {
+  flex: 0 0 auto;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.ms-table__empty {
+  opacity: 0.55;
+  padding: 4px 10px;
+}
+
+/* ---------------- 图层面板 ---------------- */
+
+.ms-panel-body--layers {
+  padding-top: 4px;
+}
+
+.ms-layerlist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 56vh;
+  overflow: auto;
+  margin: 6px 0;
+}
+
+.ms-layerrow {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.ms-layerrow:hover {
+  background: var(--panel-2);
+  border-color: var(--border);
+}
+
+.ms-layerrow.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.ms-layerrow.is-hidden {
+  opacity: 0.45;
+}
+
+.ms-layerrow.is-group {
+  font-weight: 700;
+}
+
+.ms-layerrow__icon {
+  width: 16px;
+  text-align: center;
+  flex: 0 0 auto;
+}
+
+.ms-layerrow__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ms-layerrow__meta {
+  color: var(--text-dim);
+}
+
+.ms-layerrow .ms-icon-btn {
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  opacity: 0.45;
+}
+
+.ms-layerrow:hover .ms-icon-btn,
+.ms-layerrow.is-active .ms-icon-btn {
+  opacity: 1;
+}
+
+/* ---------------- 批量操作条 ---------------- */
+
+.ms-selection-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 94%;
+  padding: 6px 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.ms-canvas.is-connecting .ms-selection-bar {
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.ms-selection-bar__count {
+  font-weight: 600;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.ms-selection-bar__sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 3px;
+}
+
+.react-flow__nodesselection-rect {
+  background: color-mix(in srgb, var(--accent) 12%, transparent) !important;
+  border: 1px dashed var(--accent) !important;
+  border-radius: 4px;
+}
+
+.ms-resize-line {
+  border-color: var(--accent) !important;
+}
+
+.ms-resize-handle {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 2px !important;
+  background: var(--accent) !important;
+  border: 1px solid var(--panel) !important;
+}
+
+/* ---------------- 颜色「无」 ---------------- */
+
+.ms-none-btn {
+  padding: 3px 8px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  flex: 0 0 auto;
+}
+
+.ms-none-btn.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.ms-color-wrap {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.ms-color-wrap.is-none .ms-color {
+  opacity: 0.35;
+}
+
+.ms-input--color {
+  width: 104px;
+  flex: 0 1 auto;
+}
+
+.ms-input--searchInline {
+  margin: 0 0 6px;
+  width: 100%;
+}
+
+.ms-node__lock {
+  position: absolute;
+  top: -9px;
+  left: -9px;
+  font-size: 11px;
+  line-height: 1;
+  background: var(--panel-2);
+  border-radius: 50%;
+  padding: 2px;
+  border: 1px solid var(--border);
+}
+
+/* ---------------- 保存弹框 / 文件目标 ---------------- */
+
+.ms-modal__panel--save {
+  width: 660px;
+}
+
+.ms-modal__body {
+  padding: 12px 16px 16px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.ms-md-preview .ms-pre {
+  max-height: 150px;
+  font-size: 11px;
+}
+
+.ms-checkrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.ms-filetarget {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px dashed var(--border-strong);
+  background: var(--panel-2);
+  flex-wrap: wrap;
+}
+
+.ms-filetarget__icon {
+  font-size: 15px;
+}
+
+.ms-filetarget__name {
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ms-filetarget__state {
+  color: var(--text-dim);
+  font-size: 11.5px;
+  margin-left: auto;
+}
+
+.ms-mini--accent {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.ms-switch--tiny {
+  font-size: 11px;
+}
+
+/* ---------------- 字段多行编辑 ---------------- */
+
+.ms-field-textarea {
+  width: 100%;
+  min-height: 84px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ms-table__editor {
+  display: block;
+  width: calc(100% - 12px);
+  height: calc(100% - 8px);
+  margin: 4px 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--panel-2);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  resize: none;
+  outline: none;
+}
+
+/* ---------------- 连线标签编辑 ---------------- */
+
+.ms-edge-label-wrap {
+  display: inline-flex;
+  align-items: center;
+  cursor: text;
+}
+
+/* 连线走位手柄：选中连线后出现，拖动改走向。
+   它们在标签层里（点得到、压得住标签），所以用绝对定位 + 画布坐标平移 */
+.ms-edge-waypoint,
+.ms-edge-waypoint-add {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+  user-select: none;
+}
+
+.ms-edge-waypoint {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--panel-2);
+  border: 2px solid var(--accent);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+  cursor: grab;
+  z-index: 2;
+}
+
+.ms-edge-waypoint:hover {
+  border-width: 3px;
+}
+
+.ms-edge-waypoint:active {
+  cursor: grabbing;
+}
+
+.ms-edge-waypoint-add {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--accent);
+  background: var(--panel-2);
+  color: var(--accent);
+  font-size: 12px;
+  line-height: 1;
+  cursor: grab;
+  opacity: 0.75;
+  z-index: 1;
+}
+
+.ms-edge-waypoint-add:hover {
+  opacity: 1;
+}
+
+.ms-edge-waypoint-add:active {
+  cursor: grabbing;
+}
+
+.ms-edge-label--empty {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.ms-edge-label-wrap:hover .ms-edge-label--empty,
+.ms-edge-label-wrap.is-editing .ms-edge-label--empty {
+  opacity: 0.55;
+}
+
+.ms-edge-label-input {
+  width: 132px;
+  padding: 2px 7px;
+  border-radius: 7px;
+  border: 1px solid var(--accent);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 11.5px;
+  font-family: inherit;
+  text-align: center;
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* ---------------- JSON 结构体节点（Redis 等） ---------------- */
+
+.ms-node--json {
+  display: block;
+  padding: 0;
+}
+
+.ms-json {
+  width: 100%;
+  height: 100%;
+  border: 2px solid;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ms-json__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-weight: 700;
+  font-size: 12.5px;
+  border-bottom: 2px solid;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.ms-json__name {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ms-json__key {
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.ms-json__body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+}
+
+.ms-json__code {
+  margin: 0;
+  padding: 6px 10px;
+  width: 100%;
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  line-height: 16px;
+  white-space: pre;
+  text-overflow: ellipsis;
+}
+
+.ms-json__empty {
+  padding: 8px 10px;
+  opacity: 0.55;
+  font-size: 11.5px;
+}
+
+.ms-json__editor {
+  width: 100%;
+  margin: 4px 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--panel-2);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  line-height: 1.45;
+  resize: none;
+  outline: none;
+}
+
+.ms-json-status {
+  color: var(--text-dim);
+  font-size: 11px;
+  align-self: center;
+}
+
+.ms-json-status.is-bad {
+  color: var(--danger);
+}
+
+.ms-input--id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+.ms-input--id.is-bad {
+  border-color: var(--danger);
+}
+
+.ms-edge-label-preview {
+  margin: 6px 0;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.ms-edge-label-preview.is-bad {
+  color: var(--danger);
+}
+
+
+/* ---------------- pele 渲染出的 SVG ---------------- */
+
+.ms-preview svg.pele {
+  max-width: 100%;
+  height: auto;
+}
+
+.ms-render-meta {
+  opacity: 0.75;
+}
+
+
+/* ================================================================== *
+ * 皮肤：暖色（Onevra 风）
+ *   - 暖白 / 暖炭四级表面 + 1px 暖灰描边
+ *   - 单一主色：陶土橙（暗色下提亮同色相）
+ *   - 节点与 classDef 颜色不动（那是内容规范，不是外壳）
+ * ================================================================== */
+
+[data-theme='light'][data-skin='warm'] {
+  --pele-bg: #fcfbf9;
+  --pele-fg: #33332f;
+  --pele-muted: #72726a;
+  --pele-line: #706b60;
+  --pele-surface: #fefefd;
+  --pele-surface-alt: #f3f1ec;
+  --pele-border: #deded5;
+  --pele-accent: #bd481b;
+
+  --bg: #fcfbf9;
+  --panel: #f7f5f0;
+  --panel-2: #fefefd;
+  --text: #33332f;
+  --text-dim: #72726a;
+  --border: #deded5;
+  --border-strong: #c9c4b8;
+  --accent: #bd481b;
+  --accent-soft: #f6e3d9;
+  --danger: #b4444c;
+  --shadow: 0 1px 2px rgba(60, 50, 40, 0.06), 0 6px 18px rgba(60, 50, 40, 0.08);
+  --grid-dot: #ddd8cd;
+  --group-fill: rgba(190, 170, 145, 0.12);
+  --minimap-mask: rgba(200, 190, 175, 0.18);
+  --node-filter: drop-shadow(0 1px 2px rgba(70, 55, 40, 0.08)) drop-shadow(0 6px 16px rgba(70, 55, 40, 0.1));
+  --node-filter-hover: drop-shadow(0 1px 3px rgba(70, 55, 40, 0.12)) drop-shadow(0 10px 24px rgba(70, 55, 40, 0.14));
+  --node-box-shadow: 0 1px 2px rgba(70, 55, 40, 0.08), 0 6px 16px rgba(70, 55, 40, 0.1);
+  --node-box-shadow-hover: 0 1px 3px rgba(70, 55, 40, 0.12), 0 10px 24px rgba(70, 55, 40, 0.14);
+  --node-ring: rgba(189, 72, 27, 0.7);
+}
+
+[data-theme='dark'][data-skin='warm'] {
+  --pele-bg: #211f1c;
+  --pele-fg: #eeeae2;
+  --pele-muted: #bdb6aa;
+  --pele-line: #a9a294;
+  --pele-surface: #2b2925;
+  --pele-surface-alt: #36332e;
+  --pele-border: #504b43;
+  --pele-accent: #ed986e;
+
+  --bg: #211f1c;
+  --panel: #26241f;
+  --panel-2: #2b2925;
+  --text: #eeeae2;
+  --text-dim: #bdb6aa;
+  --border: #3d3932;
+  --border-strong: #504b43;
+  --accent: #ed986e;
+  --accent-soft: #4a2a1c;
+  --danger: #e58f95;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 8px 24px rgba(0, 0, 0, 0.4);
+  --grid-dot: #38342d;
+  --group-fill: rgba(190, 170, 145, 0.1);
+  --minimap-mask: rgba(33, 31, 28, 0.6);
+  --node-filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5)) drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
+  --node-filter-hover: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.55)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.5));
+  --node-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.45);
+  --node-box-shadow-hover: 0 1px 3px rgba(0, 0, 0, 0.55), 0 10px 24px rgba(0, 0, 0, 0.5);
+  --node-ring: rgba(237, 152, 110, 0.75);
+}
+
+
+/* ================================================================== *
+ * 流程节点：参照 Onevra 的卡片样式
+ *   - 形状 SVG 挂柔和投影（悬停再抬一点）
+ *   - 选中用「外环」而不是把描边染成主色，语义色始终可见
+ *   - 表格 / JSON 这类卡片节点：1px 描边 + 14 圆角 + 投影
+ * ================================================================== */
+
+.ms-node .shape-frame {
+  filter: var(--node-filter);
+}
+
+.ms-node:hover .shape-frame {
+  filter: var(--node-filter-hover);
+  transition: filter 0.16s ease;
+}
+
+.ms-node__ring {
+  position: absolute;
+  inset: -6px;
+  border: 2px solid var(--node-ring);
+  border-radius: var(--node-ring-radius, 16px);
+  pointer-events: none;
+}
+
+.ms-node--group .ms-node__ring {
+  inset: -4px;
+  border-radius: 18px;
+}
+
+.ms-table,
+.ms-json {
+  border-width: 1.2px !important;
+  border-radius: 14px;
+  box-shadow: var(--node-box-shadow);
+  transition: box-shadow 0.16s ease;
+}
+
+.ms-node--table:hover .ms-table,
+.ms-node--json:hover .ms-json {
+  box-shadow: var(--node-box-shadow-hover);
+}
+
+.ms-table__head,
+.ms-json__head {
+  border-bottom-width: 1.2px;
+  border-top-left-radius: 13px;
+  border-top-right-radius: 13px;
+}
+
+.ms-node.is-selected .ms-table,
+.ms-node.is-selected .ms-json {
+  border-color: var(--accent);
+}
+
+
+/* ================================================================== *
+ * Onevra 风卡片节点（处理节点等）
+ *   Surface 底 + 1px 软描边 + 14 圆角 + 极轻投影；语义色放在图标块里
+ * ================================================================== */
+
+.ms-node--card {
+  display: block;
+  padding: 0;
+}
+
+.ms-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--node-box-shadow);
+  overflow: hidden;
+  transition: box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.ms-node--card:hover .ms-card {
+  box-shadow: var(--node-box-shadow-hover);
+}
+
+.ms-node--card .ms-node__ring {
+  inset: -3px;
+  border-radius: 17px;
+}
+
+/* 卡片里编辑标题时左对齐（默认输入框是居中的） */
+.ms-card__body .ms-node__input {
+  text-align: left;
+}
+
+.ms-card__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.ms-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ms-card__desc {
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: var(--text-dim);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ================================================================== *
+ * 时间轴（剧本回放）面板
+ * ================================================================== */
+
+.ms-canvas-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.ms-canvas-col > .ms-canvas {
+  flex: 1;
+  min-height: 0;
+}
+
+.ms-timeline {
+  flex: 0 0 auto;
+  max-height: 46vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+}
+
+.ms-timeline__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  min-height: 40px;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+.ms-timeline.is-open .ms-timeline__bar {
+  border-bottom: 1px solid var(--border);
+}
+
+.ms-timeline__fold {
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 2px;
+}
+
+.ms-timeline__title {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.ms-timeline__empty {
+  color: var(--text-dim);
+}
+
+.ms-timeline__clock {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ms-timeline__speed {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.ms-timeline__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ms-timeline__speedbtn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 1px 6px;
+  cursor: pointer;
+}
+
+.ms-timeline__speedbtn.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ms-timeline__spacer {
+  flex: 1;
+}
+
+.ms-timeline__tabs {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.ms-timeline__tab {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 12px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.ms-timeline__tab.is-active {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.ms-timeline__hint {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.ms-timeline__hintblock {
+  padding: 10px 14px 12px;
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.ms-timeline__hintblock code {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 4px;
+  font-size: 11px;
+}
+
+/* ---- 甘特视图 ---- */
+
+.ms-gantt {
+  display: flex;
+  gap: 10px;
+  padding: 8px 10px 10px;
+  min-height: 0;
+  overflow-y: auto;
+  align-items: flex-start;
+}
+
+.ms-gantt__labels {
+  flex: 0 0 132px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 18px;
+}
+
+.ms-gantt__label {
+  height: 22px;
+  line-height: 22px;
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.ms-gantt__label:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.ms-gantt__label.is-removed {
+  text-decoration: line-through;
+  opacity: 0.45;
+  cursor: default;
+}
+
+.ms-gantt__trackwrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  cursor: ew-resize;
+}
+
+.ms-gantt__ruler {
+  position: relative;
+  height: 18px;
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+
+.ms-gantt__tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-variant-numeric: tabular-nums;
+}
+
+.ms-gantt__rows {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ms-gantt__row {
+  position: relative;
+  height: 22px;
+  border-radius: 5px;
+  background: var(--panel-2);
+}
+
+.ms-gantt__bar {
+  position: absolute;
+  top: 2px;
+  height: 18px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--accent) 34%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ms-gantt__bar:hover {
+  background: color-mix(in srgb, var(--accent) 55%, var(--panel));
+}
+
+.ms-gantt__bar.is-done {
+  background: color-mix(in srgb, var(--accent) 72%, var(--panel));
+}
+
+.ms-gantt__playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  pointer-events: none;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.ms-gantt__aside {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 18px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+/* ---- 审阅视图 ---- */
+
+.ms-review {
+  display: flex;
+  gap: 16px;
+  padding: 10px 12px 12px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.ms-review__col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ms-review__head {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.ms-review__count {
+  font-weight: 400;
+  color: var(--text-dim);
+  margin-left: 6px;
+}
+
+.ms-review__empty {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.ms-review__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  min-height: 26px;
+}
+
+.ms-review__row:hover {
+  background: var(--panel-2);
+}
+
+.ms-review__row.is-removed .ms-review__name,
+.ms-review__row.is-removed .ms-review__meta {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.ms-review__row.is-unmatched .ms-review__name {
+  color: var(--danger);
+}
+
+.ms-review__warn {
+  color: var(--danger);
+}
+
+.ms-review__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.ms-review__meta {
+  color: var(--text-dim);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.ms-review__bind {
+  margin-left: auto;
+  font-size: 11.5px;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+.ms-review__col .ms-btn {
+  margin-left: auto;
+}
+
+/* ---- 回放期间：表节点「字段: 值」+ 值闪烁 ---- */
+
+.ms-table__row.is-value-mode .ms-table__col {
+  opacity: 0.85;
+}
+
+.ms-table__value {
+  font-variant-numeric: tabular-nums;
+}
+
+.ms-table__value.is-changed {
+  animation: ms-value-flash 0.8s ease-out;
+}
+
+@keyframes ms-value-flash {
+  0% {
+    color: var(--accent);
+    text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  100% {
+    color: inherit;
+    text-shadow: none;
+  }
+}
+
+/* ---- 事件触发的连线闪烁 ---- */
+
+.ms-edge--blink {
+  animation: ms-edge-blink 0.9s ease-in-out;
+}
+
+@keyframes ms-edge-blink {
+  0%,
+  60%,
+  100% {
+    stroke: var(--accent);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  15%,
+  45% {
+    filter: drop-shadow(0 0 7px var(--accent));
+  }
+  30%,
+  75% {
+    filter: drop-shadow(0 0 2px var(--accent));
+  }
+}
+
+/* ---------------- 画布光标：默认箭头，按住空格才是手型 ---------------- */
+
+.react-flow__pane,
+.react-flow__pane.draggable,
+.react-flow__pane.selection,
+.react-flow__pane.selecting {
+  cursor: default;
+}
+
+.react-flow__pane.dragging {
+  cursor: grabbing;
+}
+
+body.ms-space-pan .react-flow__pane,
+body.ms-space-pan .react-flow__pane.draggable,
+body.ms-space-pan .react-flow__pane.selection {
+  cursor: grab;
+}
+
+body.ms-space-pan .react-flow__pane.dragging {
+  cursor: grabbing;
+}

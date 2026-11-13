@@ -1,0 +1,13 @@
+flowchart TB
+  t_products["products<br/>id: bigint<br/>name: varchar<br/>price: decimal<br/>status: varchar"]:::table
+  t_inventory["inventory<br/>sku_id: bigint<br/>stock: int<br/>locked: int"]:::table
+  t_orders["orders<br/>id: bigint<br/>user_id: bigint<br/>amount: decimal<br/>status: varchar"]:::table
+  t_order_items["order_items<br/>id: bigint<br/>order_id: bigint<br/>price: decimal<br/>status: varchar"]:::table
+  t_coupons["coupons<br/>id: bigint<br/>code: varchar<br/>status: varchar"]:::table
+  t_audit_log["audit_log<br/>id: bigint<br/>action: varchar<br/>rows: int"]:::table
+  t_shop_stats["shop_stats<br/>shop_id: bigint<br/>total_sales: decimal"]:::table
+
+  t_products -->|关联| t_inventory
+  t_orders -->|关联| t_order_items
+  t_orders -->|关联| t_coupons
+  t_audit_log -->|关联| t_shop_stats

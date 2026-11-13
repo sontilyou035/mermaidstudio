@@ -1,0 +1,74 @@
+{
+  "kind": "mermaid-studio-scenario",
+  "version": 1,
+  "document": "商家后台 · 单品直降演示",
+  "totalMs": 13500,
+  "events": [
+    {
+      "name": "新建单品直降",
+      "startMs": 0,
+      "durationMs": 2000,
+      "changes": [
+        { "table": "products", "field": "price", "value": "99.00" },
+        { "table": "products", "field": "status", "value": "on_sale" }
+      ]
+    },
+    {
+      "name": "批量导入",
+      "startMs": 2400,
+      "durationMs": 1800,
+      "changes": [
+        { "table": "inventory", "field": "stock", "value": "1000" },
+        { "table": "products", "field": "price", "value": "89.00" }
+      ]
+    },
+    {
+      "name": "提交审批",
+      "startMs": 4600,
+      "durationMs": 1600,
+      "changes": [
+        { "table": "orders", "field": "id", "value": "1234" },
+        { "table": "orders", "field": "amount", "value": "99.00" },
+        { "table": "orders", "field": "status", "value": "pending" },
+        { "table": "order_items", "field": "id", "value": "8899" },
+        { "table": "order_items", "field": "price", "value": "99.00" }
+      ]
+    },
+    {
+      "name": "支付成功",
+      "startMs": 6600,
+      "durationMs": 1400,
+      "changes": [
+        { "table": "orders", "field": "status", "value": "paid" },
+        { "table": "coupons", "field": "status", "value": "used" }
+      ]
+    },
+    {
+      "name": "扣减库存",
+      "startMs": 8400,
+      "durationMs": 1600,
+      "changes": [
+        { "table": "inventory", "field": "stock", "value": "999" },
+        { "table": "inventory", "field": "locked", "value": "0" }
+      ]
+    },
+    {
+      "name": "发货",
+      "startMs": 10400,
+      "durationMs": 1500,
+      "changes": [
+        { "table": "orders", "field": "status", "value": "shipped" },
+        { "table": "order_items", "field": "status", "value": "shipped" }
+      ]
+    },
+    {
+      "name": "后台报表刷新",
+      "startMs": 12400,
+      "durationMs": 900,
+      "changes": [
+        { "table": "audit_log", "field": "rows", "value": "48213" },
+        { "table": "shop_stats", "field": "total_sales", "value": "12000.00" }
+      ]
+    }
+  ]
+}
