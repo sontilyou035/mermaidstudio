@@ -225,7 +225,7 @@ function GraphViewInner() {
     const zoom = Math.max(
       0.1,
       Math.min(
-        1.15,
+        1.5,
         (width - PAD * 2) / Math.max(1, maxX - minX + NODE_W),
         (height - PAD * 2) / Math.max(1, maxY - minY + NODE_H),
       ),
