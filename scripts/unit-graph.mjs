@@ -113,6 +113,12 @@ test('邻接是无向的，跳数按最短路径算', () => {
     ),
   )
 
+  const byNode = new Map(model.nodes.map((n) => [n.id, n]))
+  assert.equal(byNode.get('t_a').degree, 2)
+  assert.equal(byNode.get('t_b').degree, 2)
+  assert.equal(byNode.get('t_c').degree, 3)
+  assert.equal(byNode.get('t_d').degree, 1)
+
   assert.deepEqual([...model.neighbors.get('t_a')].sort(), ['t_b', 't_c'])
   assert.deepEqual([...model.neighbors.get('t_c')].sort(), ['t_a', 't_b', 't_d'])
 

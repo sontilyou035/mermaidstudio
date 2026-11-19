@@ -8,28 +8,29 @@ export interface GraphEdgeData extends Record<string, unknown> {
   arrow: boolean
   label: string
   dim: boolean
+  /** 两端圆点的半径：线要缩到各自圆点的边缘，节点大小随度数变 */
+  sourceR: number
+  targetR: number
 }
 
 export type GraphEdgeModel = Edge<GraphEdgeData, 'graph'>
 
-const ARROW_LEN = 11
-const ARROW_HALF = 4.5
-/** 线从圆点圆心再缩回来这么一点，正好贴在圆点边缘（普通点半径 4.5，焦点点半径 7） */
-const DOT_INSET = 7
+const ARROW_LEN = 8
+const ARROW_HALF = 3.4
 
 function GraphEdgeViewInner({ id, sourceX, sourceY, targetX, targetY, data }: EdgeProps<GraphEdgeModel>) {
-  const d = data ?? { dashed: false, warn: false, arrow: true, label: '', dim: false }
+  const d = data ?? { dashed: false, warn: false, arrow: true, label: '', dim: false, sourceR: 4, targetR: 4 }
 
   const dx = targetX - sourceX
   const dy = targetY - sourceY
   const len = Math.hypot(dx, dy) || 1
   const ux = dx / len
   const uy = dy / len
-  // 连接点锚在圆点圆心上，所以两端都缩到圆点边缘，别让线穿过圆点
-  const startX = sourceX + ux * DOT_INSET
-  const startY = sourceY + uy * DOT_INSET
-  const tipX = targetX - ux * DOT_INSET
-  const tipY = targetY - uy * DOT_INSET
+  // 连接点锚在圆点圆心，两端各缩到自己的圆点边缘（留 1.5px 空隙）
+  const startX = sourceX + ux * (d.sourceR + 1.5)
+  const startY = sourceY + uy * (d.sourceR + 1.5)
+  const tipX = targetX - ux * (d.targetR + 1.5)
+  const tipY = targetY - uy * (d.targetR + 1.5)
   // 线画到箭头根部，箭头压在圆点边缘上
   const baseX = d.arrow ? tipX - ux * ARROW_LEN : tipX
   const baseY = d.arrow ? tipY - uy * ARROW_LEN : tipY

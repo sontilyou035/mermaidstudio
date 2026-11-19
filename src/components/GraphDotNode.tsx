@@ -6,13 +6,19 @@ const GROUP_COLORS = ['#2563eb', '#059669', '#d97706', '#7c3aed', '#e11d48', '#0
 
 /** 节点在画布上的固定占位框：圆点在顶部正中，名字在下面 */
 export const NODE_W = 140
-export const NODE_H = 56
-/** 圆点中心距节点框顶部的距离（连线端点也锚在这里） */
-export const DOT_ANCHOR_Y = 8
+export const NODE_H = 70
+/** 圆点中心距节点框顶部的距离（连线端点也锚在这里；圆点大小变化时圆心不动） */
+export const DOT_ANCHOR_Y = 16
+
+/** 圆点直径：连线越多面积越大（面积与条数成正比，所以直径随 √条数 增长） */
+export function dotSize(degree: number): number {
+  return Math.round(Math.min(22, 8 + Math.sqrt(Math.max(0, degree)) * 3.4))
+}
 
 /** 图谱里的一个点：Obsidian 式圆点 + 下方的名字 */
 export interface GraphDotData extends Record<string, unknown> {
   label: string
+  degree: number
   groupIndex: number
   hop: number | null
   isFocus: boolean
@@ -54,7 +60,7 @@ function GraphDotNodeInner({ id, data }: NodeProps<GraphDotNodeModel>) {
       <Handle type="target" position={Position.Top} style={HANDLE_STYLE} isConnectable={false} />
       <Handle type="source" position={Position.Top} style={HANDLE_STYLE} isConnectable={false} />
       <div className="ms-gdot__body">
-        <span className="ms-gdot__dot" />
+        <span className="ms-gdot__dot" style={{ width: dotSize(data.degree), height: dotSize(data.degree) }} />
         <span className="ms-gdot__label">{data.label}</span>
       </div>
     </div>

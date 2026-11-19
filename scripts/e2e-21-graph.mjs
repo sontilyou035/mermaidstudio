@@ -157,6 +157,36 @@ const opened = await evaluate(`(() => {
     dy: Math.round(dot.top + dot.height / 2 - (canvas.top + canvas.height / 2)),
   }
 })()`)
+const styling = await evaluate(`(() => {
+  const focus = document.querySelector('.ms-gdot.is-focus')
+  const focusDot = focus.querySelector('.ms-gdot__dot')
+  const focusLabel = focus.querySelector('.ms-gdot__label')
+  const other = document.querySelector('.ms-gdot:not(.is-focus) .ms-gdot__dot')
+  const line = document.querySelector('.ms-gedge__line')
+  return {
+    focusW: Math.round(focusDot.getBoundingClientRect().width),
+    otherW: Math.round(other.getBoundingClientRect().width),
+    labelBg: getComputedStyle(focusLabel).backgroundColor,
+    dotShadow: getComputedStyle(focusDot).boxShadow,
+    stroke: getComputedStyle(line).strokeWidth,
+  }
+})()`)
+check(
+  '连线是 Obsidian 那种细线（1px）',
+  styling.stroke === '1px',
+  JSON.stringify({ stroke: styling.stroke }),
+)
+check(
+  '圆点面积随连线数增长（度数高的点更大），焦点不再额外放大',
+  styling.focusW > styling.otherW,
+  JSON.stringify({ focusW: styling.focusW, otherW: styling.otherW }),
+)
+check(
+  '焦点节点没有渐变光环、标签没有白色底',
+  styling.dotShadow === 'none' && styling.labelBg === 'rgba(0, 0, 0, 0)',
+  JSON.stringify({ dotShadow: styling.dotShadow, labelBg: styling.labelBg }),
+)
+
 check(
   '打开图谱就有一个焦点（度数最高的表），并且落在圆心',
   opened.focus === 1 && opened.id === fixture.ids.items && Math.abs(opened.dx) <= 80 && Math.abs(opened.dy) <= 80,

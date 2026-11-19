@@ -13,7 +13,7 @@ import { useStore } from '../store'
 import { getRfInstance, setRfInstance } from '../lib/rf'
 import { bfsHops, deriveGraphModel, graphSignature } from '../lib/graphModel'
 import { DEFAULT_SEED, defaultRootId, layoutGraph } from '../lib/graphLayout'
-import { DOT_ANCHOR_Y, GraphDotNode, NODE_H, NODE_W, type GraphDotNodeModel } from './GraphDotNode'
+import { DOT_ANCHOR_Y, GraphDotNode, NODE_H, NODE_W, dotSize, type GraphDotNodeModel } from './GraphDotNode'
 import { GraphEdgeView, type GraphEdgeModel } from './GraphEdgeView'
 
 const nodeTypes = { dot: GraphDotNode }
@@ -155,6 +155,7 @@ function GraphViewInner() {
           connectable: false,
           data: {
             label: n.label,
+            degree: n.degree,
             groupIndex: n.groupIndex,
             hop: hop ?? null,
             isFocus,
@@ -169,6 +170,8 @@ function GraphViewInner() {
     () => new Set(nodes.filter((n) => n.data.isDim).map((n) => n.id)),
     [nodes],
   )
+
+  const degreeOf = useMemo(() => new Map(model.nodes.map((n) => [n.id, n.degree])), [model])
 
   const edges = useMemo<GraphEdgeModel[]>(
     () =>
@@ -185,9 +188,12 @@ function GraphViewInner() {
             arrow: e.arrow,
             label: e.label,
             dim: dimIds.has(e.source) || dimIds.has(e.target),
+            // 圆点大小随度数变，线要缩到各自圆点的边缘
+            sourceR: dotSize(degreeOf.get(e.source) ?? 0) / 2,
+            targetR: dotSize(degreeOf.get(e.target) ?? 0) / 2,
           },
         })),
-    [model, onlyOpen, dimIds],
+    [model, onlyOpen, dimIds, degreeOf],
   )
 
   // 卸载时把单例清掉：否则"双击回流程图"的第一帧会对着已经卸载的画布 fitView

@@ -11,6 +11,8 @@ import { isEdgeLabelConforming } from './edgeLabels.ts'
 export interface GraphNode {
   id: string
   label: string
+  /** 连线条数（平行边各算一条）：视图用它决定圆点面积 */
+  degree: number
   /** 所属分组的调色索引；-1 表示不属于任何分组 */
   groupIndex: number
 }
@@ -88,6 +90,7 @@ export function deriveGraphModel(doc: DiagramDoc): GraphModel {
     .map((n) => ({
       id: n.id,
       label: nodeLabel(n),
+      degree: degree.get(n.id) ?? 0,
       groupIndex: n.data.groupId ? (groupOrder.get(n.data.groupId) ?? -1) : -1,
     }))
 

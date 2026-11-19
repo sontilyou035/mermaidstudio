@@ -2429,26 +2429,25 @@ body.ms-space-pan .react-flow__pane.dragging {
 }
 
 .ms-gdot__body {
+  /* 固定 24px 的圆点槽位：圆点大小随度数变，但圆心始终在 DOT_ANCHOR_Y */
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
+  height: 24px;
 }
 
 /* 分组色由节点写进 --gdot；缺省跟随主色 */
 .ms-gdot__dot {
-  width: 9px;
-  height: 9px;
   border-radius: 50%;
   background: var(--gdot, var(--accent));
-  transition: transform 0.16s ease, box-shadow 0.16s ease, width 0.16s ease, height 0.16s ease;
+  transition: transform 0.16s ease;
 }
 
 .ms-gdot__label {
   /* 绝对定位：表名可能比 140 的节点框长（如 ty_product.mt_store_sku_wide），
      允许它溢出节点框，不要截断成省略号 */
   position: absolute;
-  top: 19px;
+  top: 30px;
   left: 50%;
   transform: translateX(-50%);
   max-width: 230px;
@@ -2469,12 +2468,6 @@ body.ms-space-pan .react-flow__pane.dragging {
   color: var(--text);
 }
 
-.ms-gdot.is-focus .ms-gdot__dot {
-  width: 14px;
-  height: 14px;
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--gdot, var(--accent)) 24%, transparent);
-}
-
 .ms-gdot.is-focus {
   z-index: 2;
 }
@@ -2482,10 +2475,6 @@ body.ms-space-pan .react-flow__pane.dragging {
 .ms-gdot.is-focus .ms-gdot__label {
   color: var(--text);
   font-weight: 600;
-  /* 标签允许互相压住，焦点这张要压在最上面、加一层底色才读得清 */
-  background: var(--bg);
-  padding: 1px 5px;
-  border-radius: 4px;
 }
 
 .ms-gdot:hover {
@@ -2517,7 +2506,8 @@ body.ms-space-pan .react-flow__pane.dragging {
 .ms-gedge__line {
   fill: none;
   stroke: var(--ms-gedge-line);
-  stroke-width: 1.4;
+  /* Obsidian 的连线很细：1px 左右，靠颜色而不是粗细区分 */
+  stroke-width: 1;
 }
 
 .ms-gedge__arrow {
