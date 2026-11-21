@@ -151,6 +151,16 @@ const opened = await evaluate(`(() => ({
   dimEdges: document.querySelectorAll('.ms-gedge.is-dim').length,
   dots: document.querySelectorAll('.ms-gdot').length,
 }))()`)
+const geometry = await evaluate(`(() => {
+  const c = document.querySelector('.ms-canvas--graph').getBoundingClientRect()
+  const inside = [...document.querySelectorAll('.ms-gdot')].every((el) => {
+    const r = el.getBoundingClientRect()
+    return r.left >= c.left - 2 && r.right <= c.right + 2 && r.top >= c.top - 2 && r.bottom <= c.bottom + 2
+  })
+  return { inside, dots: document.querySelectorAll('.ms-gdot').length }
+})()`)
+check('打开后整张图落在画布内（视口已归位）', geometry.inside === true && geometry.dots === 4, JSON.stringify(geometry))
+
 check(
   '刚切进来全部正常显示：没有焦点、没有压暗（节点和连线都没有）',
   opened.focus === 0 && opened.dim === 0 && opened.dimEdges === 0 && opened.dots === 4,
@@ -248,7 +258,13 @@ check(
     Math.abs(dragged.y - dragStart.y - 60) <= 30 &&
     dragged.otherX === dragStart.otherX &&
     dragged.focus === dragStart.focus,
-  JSON.stringify({ dx: dragged.x - dragStart.x, dy: dragged.y - dragStart.y, otherSame: dragged.otherX === dragStart.otherX }),
+  JSON.stringify({
+    dx: dragged.x - dragStart.x,
+    dy: dragged.y - dragStart.y,
+    otherSame: dragged.otherX === dragStart.otherX,
+    focusBefore: dragStart.focus,
+    focusAfter: dragged.focus,
+  }),
 )
 check('拖动节点不写回文档坐标', dragged.doc === dragStart.doc)
 
@@ -277,6 +293,28 @@ check(
   '悬停节点变绿且不再放大',
   hovered.bg === 'rgb(22, 163, 74)' && (hovered.transform === 'none' || hovered.transform === 'matrix(1, 0, 0, 1, 0, 0)'),
   JSON.stringify(hovered),
+)
+
+const hoverScope = await evaluate(`(() => {
+  const hovering = document.querySelector('.ms-canvas--graph').classList.contains('is-hovering')
+  const dimNodes = [...document.querySelectorAll('.ms-gdot.is-dim')].map((el) => ({
+    label: el.querySelector('.ms-gdot__label').textContent,
+    op: getComputedStyle(el).opacity,
+  }))
+  const dimEdges = [...document.querySelectorAll('.ms-gedge.is-dim')].map((el) => getComputedStyle(el).opacity)
+  const liveNodes = [...document.querySelectorAll('.ms-gdot:not(.is-dim)')].map((el) => el.querySelector('.ms-gdot__label').textContent)
+  return { hovering, dimNodes, dimEdges, liveNodes }
+})()`)
+check(
+  '悬停时只保留它和 1 跳正常，其余节点与连线压到 40%',
+  hoverScope.hovering === true &&
+    hoverScope.liveNodes.includes('coupons') &&
+    hoverScope.liveNodes.includes('order_items') &&
+    hoverScope.dimNodes.length === 1 &&
+    hoverScope.dimNodes.every((n) => n.op === '0.4') &&
+    hoverScope.dimEdges.length === 1 &&
+    hoverScope.dimEdges.every((op) => op === '0.4'),
+  JSON.stringify(hoverScope),
 )
 await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 10, y: 10 })
 await sleep(200)
@@ -327,6 +365,39 @@ const cleared = await evaluate(`(() => ({
   focus: document.querySelectorAll('.ms-gdot.is-focus').length,
 }))()`)
 check('点空白清掉聚焦', cleared.dim === 0 && cleared.focus === 0, JSON.stringify(cleared))
+
+/* ---------- 拖动时连线不能闪没 ---------- */
+
+const dragPoint = await evaluate(`(() => {
+  const dot = document.querySelector('.ms-gdot[data-id="' + ${JSON.stringify(fixture.ids.items)} + '"] .ms-gdot__dot').getBoundingClientRect()
+  return { x: Math.round(dot.left + dot.width / 2), y: Math.round(dot.top + dot.height / 2) }
+})()`)
+await evaluate(`(() => {
+  window.__edgeFrames = { frames: 0, missing: 0 }
+  const tick = () => {
+    const st = window.__edgeFrames
+    st.frames++
+    if (!document.querySelector('.ms-gedge')) st.missing++
+    if (window.__edgeSampling) requestAnimationFrame(tick)
+  }
+  window.__edgeSampling = true
+  requestAnimationFrame(tick)
+  return true
+})()`)
+await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: dragPoint.x, y: dragPoint.y })
+await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: dragPoint.x, y: dragPoint.y, button: 'left', clickCount: 1, buttons: 1 })
+for (let k = 1; k <= 6; k++) {
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: dragPoint.x + k * 15, y: dragPoint.y + k * 8, button: 'left', buttons: 1 })
+  await sleep(40)
+}
+const edgeFrames = await evaluate(`(() => { window.__edgeSampling = false; return window.__edgeFrames })()`)
+await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: dragPoint.x + 90, y: dragPoint.y + 48, button: 'left', clickCount: 1, buttons: 0 })
+await sleep(300)
+check(
+  '拖动节点时连线一直都在（不闪没）',
+  edgeFrames.frames > 3 && edgeFrames.missing === 0,
+  JSON.stringify(edgeFrames),
+)
 
 /* ---------- 双击回流程图 ---------- */
 

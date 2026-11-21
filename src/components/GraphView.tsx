@@ -49,12 +49,18 @@ function GraphViewInner() {
   const clearSelection = useStore((s) => s.clearSelection)
   const updateSettings = useStore((s) => s.updateSettings)
   const { setCenter } = useReactFlow()
+  /** React Flow 初始化完成前 setCenter 会被吞掉，初始化后再摆视口 */
+  const [rfReady, setRfReady] = useState(false)
 
   /** 高亮用的焦点：立即生效。刚进来没有焦点，全部正常显示 */
   const [focusId, setFocusId] = useState<string | null>(null)
   /** 布局用的焦点：延迟生效，给双击留出窗口 */
   const [layoutFocus, setLayoutFocus] = useState<string | null>(null)
   const focusTimer = useRef<number | null>(null)
+  /** 拖动期间不要更新悬停，否则中途的状态更新会打断 React Flow 的拖拽 */
+  const draggingRef = useRef(false)
+  /** 刚从拖动里松手：跟上来的那次 click 要忽略掉 */
+  const dragEndedAt = useRef(0)
   const [depth, setDepth] = useState<Depth>(1)
   const [onlyOpen, setOnlyOpen] = useState(false)
   const [seed, setSeed] = useState(DEFAULT_SEED)
@@ -102,7 +108,7 @@ function GraphViewInner() {
     }, FOCUS_DELAY_MS)
   }, [])
 
-  /** 拖动节点：只更新视图内的坐标，不碰文档、不进撤销栈 */
+  /** 拖动节点：逐帧更新视图内的坐标，不碰文档、不进撤销栈 */
   const onNodesChange = useCallback((changes: NodeChange[]) => {
     const moves = changes.filter(
       (c): c is Extract<NodeChange, { type: 'position' }> => c.type === 'position' && Boolean(c.position),
@@ -121,24 +127,44 @@ function GraphViewInner() {
     },
     [],
   )
+  /**
+   * 悬停的节点：临时把它的 1 跳提到正常，其余压到 40%。
+   * 和"点击聚焦"共用一套跳数计算，区别只在焦点来源与档位（悬停固定 1 跳）。
+   */
+  const [hoverId, setHoverId] = useState<string | null>(null)
+  const activeFocus = hoverId ?? focusId
+  const activeDepth: Depth = hoverId ? 1 : depth
   const hops = useMemo(
-    () => (focusId ? bfsHops(model, focusId) : new Map<string, number>()),
-    [model, focusId],
+    () => (activeFocus ? bfsHops(model, activeFocus) : new Map<string, number>()),
+    [model, activeFocus],
+  )
+
+  /** 某个节点是否在"当前焦点"的可见跳数之外 */
+  const isDimNode = useCallback(
+    (id: string) => {
+      if (!activeFocus) return false
+      const hop = hops.get(id)
+      return hop === undefined || (activeDepth !== 'all' && hop > activeDepth)
+    },
+    [activeFocus, activeDepth, hops],
   )
 
   const nodes = useMemo<GraphDotNodeModel[]>(
     () =>
       model.nodes.map((n) => {
         const hop = hops.get(n.id)
+        // is-focus 只表示"点击选中的焦点"；悬停只是临时高亮，不抢这个身份
         const isFocus = n.id === focusId
-        const isDim =
-          focusId !== null && !isFocus && (hop === undefined || (depth !== 'all' && hop > depth))
+        const isDim = isDimNode(n.id)
         return {
           id: n.id,
           type: 'dot',
           position: toNodePosition(overrides[n.id] ?? positions.get(n.id) ?? { x: 0, y: 0 }),
           width: NODE_W,
           height: NODE_H,
+          // 显式带上测量尺寸：拖动时 nodes 每帧重建，没有 measured 时
+          // React Flow 会短暂认为节点没有 handleBounds，连着它的边会被藏起来
+          measured: { width: NODE_W, height: NODE_H },
           // 焦点压在最上层：标签互相重叠时，至少焦点这张读得清
           zIndex: isFocus ? 2 : 1,
           connectable: false,
@@ -152,12 +178,7 @@ function GraphViewInner() {
           },
         }
       }),
-    [model, hops, focusId, depth, positions, overrides],
-  )
-
-  const dimIds = useMemo(
-    () => new Set(nodes.filter((n) => n.data.isDim).map((n) => n.id)),
-    [nodes],
+    [model, hops, activeFocus, isDimNode, positions, overrides],
   )
 
   const degreeOf = useMemo(() => new Map(model.nodes.map((n) => [n.id, n.degree])), [model])
@@ -175,13 +196,15 @@ function GraphViewInner() {
             dashed: e.dashed,
             arrow: e.arrow,
             label: e.label,
-            dim: dimIds.has(e.source) || dimIds.has(e.target),
+            dim: isDimNode(e.source) || isDimNode(e.target),
             // 圆点大小随度数变，线要缩到各自圆点的边缘
             sourceR: dotSize(degreeOf.get(e.source) ?? 0) / 2,
             targetR: dotSize(degreeOf.get(e.target) ?? 0) / 2,
           },
         })),
-    [model, onlyOpen, dimIds, degreeOf],
+    // 故意不依赖 nodes / overrides：拖动节点时每帧位置变化不能让边数组重建，
+    // 否则 React Flow 会重新注册边、出现"拖动时连线闪一下不见了"
+    [model, onlyOpen, isDimNode, degreeOf],
   )
 
   // 卸载时把单例清掉：否则"双击回流程图"的第一帧会对着已经卸载的画布 fitView
@@ -193,6 +216,7 @@ function GraphViewInner() {
    * 后到的 setCenter 会被它的动画覆盖掉（这就是之前怎么调都偏一截的原因）。
    */
   useEffect(() => {
+    if (!rfReady) return
     const container = document.querySelector<HTMLElement>('.ms-canvas--graph .react-flow')
     const width = container?.clientWidth ?? 900
     const height = container?.clientHeight ?? 600
@@ -218,10 +242,16 @@ function GraphViewInner() {
         (height - PAD * 2) / Math.max(1, maxY - minY + NODE_H),
       ),
     )
-    if (layoutFocus) setCenter(0, 0, { zoom, duration: 200 })
-    else setCenter((minX + maxX) / 2, (minY + maxY) / 2, { zoom, duration: 200 })
+    // onInit 回调里实例还没把尺寸写进 store，同一帧 setCenter 会被吞掉；等一帧再摆
+    const frame = requestAnimationFrame(() => {
+      if (layoutFocus) setCenter(0, 0, { zoom, duration: 200 })
+      else setCenter((minX + maxX) / 2, (minY + maxY) / 2, { zoom, duration: 200 })
+    })
+    return () => cancelAnimationFrame(frame)
+    // signature 也要跟着变：图谱已经打开、文档才加载完（比如从侧栏切图）时，
+    // 光靠 layoutFocus/seed 不会重摆视口
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layoutFocus, seed, setCenter])
+  }, [rfReady, signature, layoutFocus, seed, setCenter])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -266,15 +296,39 @@ function GraphViewInner() {
   const isEmpty = model.nodes.length === 0
 
   return (
-    <div className="ms-canvas ms-canvas--graph" data-ms-view="graph">
+    <div
+      className={`ms-canvas ms-canvas--graph${hoverId ? ' is-hovering' : ''}`}
+      data-ms-view="graph"
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        onInit={(inst) => setRfInstance(inst)}
+        onInit={(inst) => {
+          setRfInstance(inst)
+          setRfReady(true)
+        }}
         onNodesChange={onNodesChange}
+        onNodeMouseEnter={(_e, n) => {
+          if (!draggingRef.current) setHoverId(n.id)
+        }}
+        onNodeMouseLeave={() => {
+          if (!draggingRef.current) setHoverId(null)
+        }}
+        onNodeDragStart={() => {
+          draggingRef.current = true
+          setHoverId(null)
+        }}
+        onNodeDragStop={(_e, node) => {
+          draggingRef.current = false
+          dragEndedAt.current = Date.now()
+          // 松手时指针通常还在这个节点上，不会再有 mouseenter，补一次悬停
+          setHoverId(node.id)
+        }}
         onNodeClick={(e, n) => {
+          // 刚拖完的那次鼠标松开不算点击
+          if (draggingRef.current || Date.now() - dragEndedAt.current < 250) return
           // 双击的第二下 click 带 detail=2：用它回到流程图并定位（比 onNodeDoubleClick 稳）
           if (e.detail >= 2) {
             jumpToFlow(n.id)

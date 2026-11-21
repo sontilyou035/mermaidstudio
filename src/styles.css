@@ -2487,6 +2487,11 @@ body.ms-space-pan .react-flow__pane.dragging {
   opacity: 0.3;
 }
 
+/* 悬停：1 跳以内正常显示，其余压到 40%（节点与连线同一档） */
+.ms-canvas--graph.is-hovering .ms-gdot.is-dim {
+  opacity: 0.4;
+}
+
 .ms-gdot.is-dim:hover {
   opacity: 0.85;
 }
@@ -2521,6 +2526,10 @@ body.ms-space-pan .react-flow__pane.dragging {
 
 .ms-gedge.is-dim {
   opacity: 0.22;
+}
+
+.ms-canvas--graph.is-hovering .ms-gedge.is-dim {
+  opacity: 0.4;
 }
 
 /* 角落控件 */
