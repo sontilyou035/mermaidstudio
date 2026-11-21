@@ -72,7 +72,7 @@ import {
   uid,
 } from './blocks/registry'
 import { BUILTIN_BLOCKS } from './blocks/builtins'
-import { CURVE_TO_RF, edgeFromConnection, nodeFromBlock, normalizeDoc, withEdgeData } from './lib/factory'
+import { CURVE_TO_RF, createBlankDoc, edgeFromConnection, nodeFromBlock, normalizeDoc, withEdgeData } from './lib/factory'
 import { autoLayout, orderTopDown, syncGroups } from './lib/layout'
 import { parseMermaid, toMermaid, edgeTokenToData } from './lib/mermaid'
 import { fitNodeWidth } from './lib/textFit'
@@ -80,6 +80,9 @@ import { applyDefaultHandles, forceDefaultHandles, portGetter, withHandleMode } 
 import {
   bumpMdVersion,
   createStarterDoc,
+  isReloadNavigation,
+  readSessionDoc,
+  rememberSessionDoc,
   loadCustomBlocks,
   loadMdVersion,
   loadDoc,
@@ -350,10 +353,20 @@ function initState() {
   const settings = loadSettings()
   const customBlocks = loadCustomBlocks()
   let doc: DiagramDoc | null = null
-  if (index.active) doc = loadDoc(index.active)
-  if (!doc && index.order.length) doc = loadDoc(index.order[0])
-  if (!doc) doc = createStarterDoc()
+
+  if (isReloadNavigation()) {
+    // 刷新 / 前进后退：回到这个标签页里正打开的那张图（哪怕它不是"最后一次保存"的那张）
+    const sessionId = readSessionDoc()
+    if (sessionId) doc = loadDoc(sessionId)
+    else if (index.active) doc = loadDoc(index.active)
+  }
+
+  // 新链接 / 新标签页：新建模式。只有从没用过（本地一张图都没有）时才给示例图
+  if (!doc && index.order.length === 0) doc = createStarterDoc()
+  if (!doc) doc = createBlankDoc()
+
   doc = withDefaultHandles(doc, allBlocks(customBlocks))
+  rememberSessionDoc(doc.id)
   return { index, settings, customBlocks, doc }
 }
 
@@ -1917,6 +1930,11 @@ export const useStore = create<State>()((set, get) => {
 
     dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
   }
+})
+
+// 当前标签页打开的是哪张图：刷新时靠它恢复；新链接没有这一项 → 新建模式
+useStore.subscribe((state, prev) => {
+  if (state.doc.id !== prev.doc.id) rememberSessionDoc(state.doc.id)
 })
 
 /* ---------------- 便捷选择器 ---------------- */

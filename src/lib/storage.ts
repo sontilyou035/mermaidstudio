@@ -9,6 +9,37 @@ const K_DOC = (id: string) => `mermaid-studio:doc:${id}`
 const K_BLOCKS = 'mermaid-studio:custom-blocks'
 const K_SETTINGS = 'mermaid-studio:settings'
 const K_MD_VERSION = (docId: string) => `mermaid-studio:md-version:${docId}`
+/** 这个标签页里正打开哪张图：刷新时据此恢复，新链接/新标签页里没有这一项 */
+const K_SESSION_DOC = 'mermaid-studio:session-doc'
+
+export function rememberSessionDoc(id: string) {
+  try {
+    sessionStorage.setItem(K_SESSION_DOC, id)
+  } catch {
+    /* 隐私模式下 sessionStorage 可能不可用 */
+  }
+}
+
+export function readSessionDoc(): string | null {
+  try {
+    return sessionStorage.getItem(K_SESSION_DOC)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 这次加载是"刷新/前进后退"还是"新开一个链接"。
+ * 刷新 → 恢复这个标签页里正打开的文件；新开链接 → 新建模式。
+ */
+export function isReloadNavigation(): boolean {
+  try {
+    const entry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+    return entry?.type === 'reload' || entry?.type === 'back_forward'
+  } catch {
+    return false
+  }
+}
 
 export interface Settings {
   theme: 'light' | 'dark'

@@ -70,7 +70,7 @@ await send('Page.enable')
 await send('Page.navigate', { url: APP + '/' })
 await sleep(4500)
 await evaluate(`(() => { Object.keys(localStorage).filter(k => k.startsWith('mermaid-studio:')).forEach(k => localStorage.removeItem(k)); return true })()`)
-await send('Page.navigate', { url: APP + '/' })
+await send('Page.reload')
 await sleep(4500)
 
 const results = []
@@ -375,7 +375,7 @@ check('工程文档里没有 viewMode 字段', persisted.docHasViewMode === fals
 
 await evaluate(`document.querySelector('[data-view="graph"]').click()`)
 await sleep(500)
-await send('Page.navigate', { url: APP + '/' })
+await send('Page.reload')
 await sleep(4000)
 
 const afterReload = await evaluate(`(() => ({

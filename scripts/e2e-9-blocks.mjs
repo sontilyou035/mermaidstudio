@@ -35,7 +35,7 @@ await send('Runtime.enable'); await send('Page.enable')
 await send('Emulation.setDeviceMetricsOverride', { width: 1560, height: 940, deviceScaleFactor: 1, mobile: false })
 await send('Page.navigate', { url: APP + '/' }); await sleep(5000)
 await ev(`(() => { Object.keys(localStorage).filter(k=>k.startsWith('mermaid-studio:')).forEach(k=>localStorage.removeItem(k)); return 1 })()`)
-await send('Page.navigate', { url: APP + '/' }); await sleep(5500)
+await send('Page.reload'); await sleep(5500)
 
 /* ---------- 1. 工程栏两个新节点块 ---------- */
 const palette = await ev(`(() => {

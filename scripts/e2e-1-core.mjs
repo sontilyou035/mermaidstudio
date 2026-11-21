@@ -71,7 +71,7 @@ await send('Page.navigate', { url: APP + '/' })
 await new Promise((r) => setTimeout(r, 4500))
 // 清空本地数据，保证每次验证从同样的状态开始
 await evaluate(`(() => { Object.keys(localStorage).filter(k => k.startsWith('mermaid-studio:')).forEach(k => localStorage.removeItem(k)); return true })()`)
-await send('Page.navigate', { url: APP + '/' })
+await send('Page.reload')
 await new Promise((r) => setTimeout(r, 4500))
 
 const results = []
@@ -156,7 +156,7 @@ check('图表写入 localStorage', saved.nodes === 8 && saved.bytes > 500, JSON.
 check('自定义块持久化', saved.blocks === 1, `blocks=${saved.blocks}`)
 
 // 5. 刷新后仍然存在
-await send('Page.navigate', { url: APP + '/' })
+await send('Page.reload')
 await new Promise((r) => setTimeout(r, 4000))
 const afterReload = await evaluate(`(() => {
   const s = window.__ms.store.getState()

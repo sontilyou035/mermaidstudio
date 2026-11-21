@@ -38,7 +38,7 @@ await send('Page.enable')
 await send('Page.navigate', { url: APP + '/' })
 await new Promise((r) => setTimeout(r, 5000))
 await ev(`(() => { Object.keys(localStorage).filter(k=>k.startsWith('mermaid-studio:')).forEach(k=>localStorage.removeItem(k)); return 1 })()`)
-await send('Page.navigate', { url: APP + '/' })
+await send('Page.reload')
 await new Promise((r) => setTimeout(r, 5000))
 
 // 删除连线 -> 撤销

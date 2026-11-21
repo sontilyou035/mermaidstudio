@@ -24,7 +24,7 @@ if ! curl -sf -o /dev/null "http://127.0.0.1:${PORT}/json/version"; then
 fi
 
 fail=0
-for f in scripts/e2e-1-core.mjs scripts/e2e-2-layout.mjs scripts/e2e-3-behavior.mjs scripts/e2e-4-features.mjs scripts/e2e-5-fixes.mjs scripts/e2e-6-edges.mjs scripts/e2e-7-alt-drag.mjs scripts/e2e-8-docs.mjs scripts/e2e-9-blocks.mjs scripts/e2e-10-node-ids.mjs scripts/e2e-11-edge-labels.mjs scripts/e2e-12-backup.mjs scripts/e2e-13-render-engine.mjs scripts/e2e-14-skin.mjs scripts/e2e-15-node-style.mjs scripts/e2e-16-card-cursor.mjs scripts/e2e-17-timeline.mjs scripts/e2e-18-ports.mjs scripts/e2e-19-groups.mjs scripts/e2e-20-complex.mjs scripts/e2e-21-graph.mjs; do
+for f in scripts/e2e-1-core.mjs scripts/e2e-2-layout.mjs scripts/e2e-3-behavior.mjs scripts/e2e-4-features.mjs scripts/e2e-5-fixes.mjs scripts/e2e-6-edges.mjs scripts/e2e-7-alt-drag.mjs scripts/e2e-8-docs.mjs scripts/e2e-9-blocks.mjs scripts/e2e-10-node-ids.mjs scripts/e2e-11-edge-labels.mjs scripts/e2e-12-backup.mjs scripts/e2e-13-render-engine.mjs scripts/e2e-14-skin.mjs scripts/e2e-15-node-style.mjs scripts/e2e-16-card-cursor.mjs scripts/e2e-17-timeline.mjs scripts/e2e-18-ports.mjs scripts/e2e-19-groups.mjs scripts/e2e-20-complex.mjs scripts/e2e-21-graph.mjs scripts/e2e-22-open-mode.mjs; do
   echo "──────── $f"
   MS_BASE="$BASE" node "$f" || fail=1
 done

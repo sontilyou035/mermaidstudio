@@ -34,7 +34,7 @@ await send('Runtime.enable'); await send('Page.enable')
 await send('Emulation.setDeviceMetricsOverride', { width: 1560, height: 940, deviceScaleFactor: 1, mobile: false })
 await send('Page.navigate', { url: `${APP}/` }); await sleep(5000)
 await ev(`(() => { Object.keys(localStorage).filter(k=>k.startsWith('mermaid-studio:')).forEach(k=>localStorage.removeItem(k)); return 1 })()`)
-await send('Page.navigate', { url: `${APP}/` }); await sleep(5500)
+await send('Page.reload'); await sleep(5500)
 
 /* ---------- 造点数据：两份图表 + 一个自定义块 ---------- */
 const fixture = await ev(`(async () => {
@@ -113,7 +113,7 @@ check('从备份恢复出两份图表', restored.docs === 2 && restored.nodesOk 
 check('自定义节点块连 ID 前缀一起恢复', restored.blocks === 1 && restored.blockId === 'blk_backup_test' && restored.blockPrefix === 'bt', JSON.stringify(restored))
 
 /* ---------- 再刷新一次，确认真的落到本地了 ---------- */
-await send('Page.navigate', { url: `${APP}/` })
+await send('Page.reload')
 await sleep(5000)
 const afterReload = await ev(`(() => {
   const st = window.__ms.store.getState()

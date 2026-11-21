@@ -42,7 +42,7 @@ await send('Emulation.setDeviceMetricsOverride', { width: 1560, height: 940, dev
 await send('Page.navigate', { url: APP + '/' })
 await sleep(3000)
 await ev(`(() => { Object.keys(localStorage).filter(k=>k.startsWith('mermaid-studio:')).forEach(k=>localStorage.removeItem(k)); return 1 })()`)
-await send('Page.navigate', { url: APP + '/' })
+await send('Page.reload')
 await sleep(3200)
 
 await ev('window.__ms_e2e_code = ' + JSON.stringify(CODE))

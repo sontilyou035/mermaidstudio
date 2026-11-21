@@ -40,7 +40,7 @@ await send('Emulation.setDeviceMetricsOverride', { width: 1560, height: 940, dev
 await send('Page.navigate', { url: APP + '/' })
 await sleep(3500)
 await ev(`(() => { Object.keys(localStorage).filter(k=>k.startsWith('mermaid-studio:')).forEach(k=>localStorage.removeItem(k)); return 1 })()`)
-await send('Page.navigate', { url: APP + '/' })
+await send('Page.reload')
 await sleep(3500)
 
 check('调试接口可用', (await ev(`!!(window.__ms && window.__ms.store)`)) === true)
@@ -211,7 +211,7 @@ const seeded = await ev(`(() => {
   localStorage.setItem(key, JSON.stringify(doc))
   return doc.edges.length
 })()`)
-await send('Page.navigate', { url: APP + '/' })
+await send('Page.reload')
 await sleep(4000)
 rows = await ev(probe)
 check(

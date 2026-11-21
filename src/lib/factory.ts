@@ -60,6 +60,19 @@ export function nodeFromBlock(
  * 兼容旧版本保存的数据：早期节点把尺寸放在 data 里、没有 node.style，
  * 打开时补齐，避免节点退化成按内容自适应。
  */
+/** 一张空白文档：打开应用首页时的"新建模式"（不落盘，等真实编辑再保存） */
+export function createBlankDoc(): DiagramDoc {
+  return {
+    id: uid('doc'),
+    name: '未命名图表',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    direction: 'TB',
+    nodes: [],
+    edges: [],
+  }
+}
+
 export function normalizeDoc(doc: DiagramDoc): DiagramDoc {
   return {
     ...doc,
