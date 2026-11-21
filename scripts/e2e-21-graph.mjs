@@ -145,54 +145,48 @@ check('视图模式写进 settings', mounted.mode === 'graph', `mode=${mounted.m
 check('只画实体表：4 个点', mounted.dots === 4, `dots=${mounted.dots}`)
 
 await sleep(700)
-const opened = await evaluate(`(() => {
-  const canvas = document.querySelector('.ms-canvas--graph').getBoundingClientRect()
-  const focus = document.querySelector('.ms-gdot.is-focus')
-  if (!focus) return { focus: 0 }
-  const dot = focus.querySelector('.ms-gdot__dot').getBoundingClientRect()
-  return {
-    focus: document.querySelectorAll('.ms-gdot.is-focus').length,
-    id: focus.getAttribute('data-id'),
-    dx: Math.round(dot.left + dot.width / 2 - (canvas.left + canvas.width / 2)),
-    dy: Math.round(dot.top + dot.height / 2 - (canvas.top + canvas.height / 2)),
-  }
-})()`)
-const styling = await evaluate(`(() => {
-  const focus = document.querySelector('.ms-gdot.is-focus')
-  const focusDot = focus.querySelector('.ms-gdot__dot')
-  const focusLabel = focus.querySelector('.ms-gdot__label')
-  const other = document.querySelector('.ms-gdot:not(.is-focus) .ms-gdot__dot')
-  const line = document.querySelector('.ms-gedge__line')
-  return {
-    focusW: Math.round(focusDot.getBoundingClientRect().width),
-    otherW: Math.round(other.getBoundingClientRect().width),
-    labelBg: getComputedStyle(focusLabel).backgroundColor,
-    dotShadow: getComputedStyle(focusDot).boxShadow,
-    stroke: getComputedStyle(line).strokeWidth,
-  }
-})()`)
+const opened = await evaluate(`(() => ({
+  focus: document.querySelectorAll('.ms-gdot.is-focus').length,
+  dim: document.querySelectorAll('.ms-gdot.is-dim').length,
+  dimEdges: document.querySelectorAll('.ms-gedge.is-dim').length,
+  dots: document.querySelectorAll('.ms-gdot').length,
+}))()`)
 check(
-  '连线是 Obsidian 那种细线（1px）',
-  styling.stroke === '1px',
-  JSON.stringify({ stroke: styling.stroke }),
-)
-check(
-  '圆点面积随连线数增长（度数高的点更大），焦点不再额外放大',
-  styling.focusW > styling.otherW,
-  JSON.stringify({ focusW: styling.focusW, otherW: styling.otherW }),
-)
-check(
-  '焦点节点没有渐变光环、标签没有白色底',
-  styling.dotShadow === 'none' && styling.labelBg === 'rgba(0, 0, 0, 0)',
-  JSON.stringify({ dotShadow: styling.dotShadow, labelBg: styling.labelBg }),
-)
-
-check(
-  '打开图谱就有一个焦点（度数最高的表），并且落在圆心',
-  opened.focus === 1 && opened.id === fixture.ids.items && Math.abs(opened.dx) <= 80 && Math.abs(opened.dy) <= 80,
+  '刚切进来全部正常显示：没有焦点、没有压暗（节点和连线都没有）',
+  opened.focus === 0 && opened.dim === 0 && opened.dimEdges === 0 && opened.dots === 4,
   JSON.stringify(opened),
 )
 
+const styling = await evaluate(`(() => {
+  const dotOf = (id) => document.querySelector('.ms-gdot[data-id="' + id + '"] .ms-gdot__dot')
+  const labelOf = (id) => document.querySelector('.ms-gdot[data-id="' + id + '"] .ms-gdot__label')
+  const itemsId = ${JSON.stringify(fixture.ids.items)}
+  const ordersId = ${JSON.stringify(fixture.ids.orders)}
+  const line = document.querySelector('.ms-gedge__line')
+  return {
+    itemsW: Math.round(dotOf(itemsId).getBoundingClientRect().width),
+    ordersW: Math.round(dotOf(ordersId).getBoundingClientRect().width),
+    labelBg: getComputedStyle(labelOf(itemsId)).backgroundColor,
+    dotShadow: getComputedStyle(dotOf(itemsId)).boxShadow,
+    stroke: getComputedStyle(line).strokeWidth,
+    strokeColor: getComputedStyle(line).stroke,
+  }
+})()`)
+check(
+  '连线是 Obsidian 那种细线（1px）、颜色 rgb(100, 116, 139)',
+  styling.stroke === '1px' && styling.strokeColor === 'rgb(100, 116, 139)',
+  JSON.stringify({ stroke: styling.stroke, color: styling.strokeColor }),
+)
+check(
+  '圆点面积随连线数增长（度数高的点更大）',
+  styling.itemsW > styling.ordersW,
+  JSON.stringify({ itemsW: styling.itemsW, ordersW: styling.ordersW }),
+)
+check(
+  '节点没有渐变光环、标签没有白色底',
+  styling.dotShadow === 'none' && styling.labelBg === 'rgba(0, 0, 0, 0)',
+  JSON.stringify({ dotShadow: styling.dotShadow, labelBg: styling.labelBg }),
+)
 const visible = await evaluate(`(() => {
   const ids = [...document.querySelectorAll('.ms-gdot')].map(el => el.getAttribute('data-id'))
   return {
@@ -265,6 +259,28 @@ const edgeMarks = await evaluate(`(() => ({
   groups: [...new Set([...document.querySelectorAll('.ms-gdot')].map(el => el.getAttribute('data-group')))],
 }))()`)
 check('虚线 = 待确认项、不合规标签标 ⚠、方向画箭头', edgeMarks.dashed === 1 && edgeMarks.warn === 1 && edgeMarks.arrows === 3, JSON.stringify(edgeMarks))
+
+/* ---------- 悬停：变绿，不放大 ---------- */
+
+const hoverPoint = await evaluate(`(() => {
+  const dot = document.querySelector('.ms-gdot[data-id="' + ${JSON.stringify(fixture.ids.coupons)} + '"] .ms-gdot__dot')
+  const r = dot.getBoundingClientRect()
+  return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }
+})()`)
+await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: hoverPoint.x, y: hoverPoint.y })
+await sleep(300)
+const hovered = await evaluate(`(() => {
+  const dot = document.querySelector('.ms-gdot[data-id="' + ${JSON.stringify(fixture.ids.coupons)} + '"] .ms-gdot__dot')
+  const cs = getComputedStyle(dot)
+  return { bg: cs.backgroundColor, transform: cs.transform }
+})()`)
+check(
+  '悬停节点变绿且不再放大',
+  hovered.bg === 'rgb(22, 163, 74)' && (hovered.transform === 'none' || hovered.transform === 'matrix(1, 0, 0, 1, 0, 0)'),
+  JSON.stringify(hovered),
+)
+await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 10, y: 10 })
+await sleep(200)
 
 /* ---------- 聚焦与跳数 ---------- */
 

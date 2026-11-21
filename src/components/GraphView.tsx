@@ -12,7 +12,7 @@ import '@xyflow/react/dist/style.css'
 import { useStore } from '../store'
 import { getRfInstance, setRfInstance } from '../lib/rf'
 import { bfsHops, deriveGraphModel, graphSignature } from '../lib/graphModel'
-import { DEFAULT_SEED, defaultRootId, layoutGraph } from '../lib/graphLayout'
+import { DEFAULT_SEED, layoutGraph } from '../lib/graphLayout'
 import { DOT_ANCHOR_Y, GraphDotNode, NODE_H, NODE_W, dotSize, type GraphDotNodeModel } from './GraphDotNode'
 import { GraphEdgeView, type GraphEdgeModel } from './GraphEdgeView'
 
@@ -50,21 +50,10 @@ function GraphViewInner() {
   const updateSettings = useStore((s) => s.updateSettings)
   const { setCenter } = useReactFlow()
 
-  /**
-   * 打开图谱时默认就有一个焦点：流程图里选中的表，否则取度数最高的表。
-   * 没有焦点时，一张链式的图会被摆成一条横线——那不叫"圆心聚焦"。
-   */
-  const [initialFocus] = useState<string | null>(() => {
-    const initialModel = deriveGraphModel(doc)
-    const selected = doc.nodes.find((n) => n.selected)?.id
-    if (selected && initialModel.nodes.some((n) => n.id === selected)) return selected
-    return defaultRootId(initialModel)
-  })
-
-  /** 高亮用的焦点：立即生效 */
-  const [focusId, setFocusId] = useState<string | null>(initialFocus)
+  /** 高亮用的焦点：立即生效。刚进来没有焦点，全部正常显示 */
+  const [focusId, setFocusId] = useState<string | null>(null)
   /** 布局用的焦点：延迟生效，给双击留出窗口 */
-  const [layoutFocus, setLayoutFocus] = useState<string | null>(initialFocus)
+  const [layoutFocus, setLayoutFocus] = useState<string | null>(null)
   const focusTimer = useRef<number | null>(null)
   const [depth, setDepth] = useState<Depth>(1)
   const [onlyOpen, setOnlyOpen] = useState(false)

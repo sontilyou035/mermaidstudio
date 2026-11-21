@@ -2406,7 +2406,7 @@ body.ms-space-pan .react-flow__pane.dragging {
  * ================================================================== */
 
 .ms-canvas--graph {
-  --ms-gedge-line: #94a3b8;
+  --ms-gedge-line: rgb(100, 116, 139);
 }
 
 [data-theme='dark'] .ms-canvas--graph {
@@ -2460,8 +2460,9 @@ body.ms-space-pan .react-flow__pane.dragging {
   transition: color 0.16s ease;
 }
 
+/* 悬停：圆点变绿（不放大，避免节点大小跟"连线数"这套编码打架） */
 .ms-gdot:hover .ms-gdot__dot {
-  transform: scale(1.25);
+  background: #16a34a;
 }
 
 .ms-gdot:hover .ms-gdot__label {
