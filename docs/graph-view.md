@@ -17,7 +17,7 @@
 | D9 | 布局 | 手写力导向：焦点钉在圆心、BFS 跳数一圈圈往外 + 收敛后一次性渲染，零新依赖。**换焦点延迟 280ms 再重排**（保住双击，见 §5） |
 | D10 | 载体 | 复用 React Flow：新增 `dot` 节点类型 + `graph` 连线类型 |
 | D11 | 聚焦操作 | **打开时全部正常显示、没有焦点**；单击才聚焦（1 跳正常、其余半透明）+ 跳数档位 1/2/全部 + 点空白还原 |
-| D12 | 诊断语义 | 继承既有图语言：虚线 = 待确认项（可筛"只看待确认"）、不合规标签连线标 ⚠ |
+| D12 | 诊断语义 | 继承既有图语言：虚线 = 待确认项（可筛"只看待确认"）。**线段上不再打 ⚠**：标签不合规的信号留在图层面板/检查器（那里才能改） |
 | D13 | 分组与可见性 | 不画分组框，同 `groupId` 同底色；`hidden` 一致不画；纯文本节点默认不画 |
 | D14 | 命名 | 视图 =「关系图谱」，聚焦态 =「焦点邻域」，距离 =「跳」 |
 
@@ -55,13 +55,13 @@ C 与 A 不冲突：真跑起来手感不够，再把 100 行手写模拟换成 
 ```ts
 interface GraphModel {
   nodes: { id, label, fieldCount, columns, groupIndex }[]  // groupIndex: -1 = 不属于分组
-  edges: { id, source, target, dashed, warn, arrow, label }[]
+  edges: { id, source, target, dashed, arrow, label }[]
   neighbors: Map<nodeId, nodeId[]>   // 无向邻接表
 }
 bfsHops(model, fromId) → Map<nodeId, number>   // 最短跳数，视图按需调用
 ```
 
-`dashed` 直接读 `data.lineStyle === 'dashed'`（既有约定：虚线 = 待确认项，见 [exporters.ts:56](../src/lib/exporters.ts#L56)）；`warn` 用现成的 `isEdgeLabelConforming()`（[edgeLabels.ts:87](../src/lib/edgeLabels.ts#L87)）。
+`dashed` 直接读 `data.lineStyle === 'dashed'`（既有约定：虚线 = 待确认项，见 [exporters.ts:56](../src/lib/exporters.ts#L56)）。
 
 ## 5. 布局：可复现的手写力导向
 
@@ -105,7 +105,7 @@ bfsHops(model, fromId) → Map<nodeId, number>   // 最短跳数，视图按需�
 | `src/lib/graphLayout.ts` | 新增 | BFS 环初值 + 力导向收敛 + 结构签名缓存 + 逐节点占位半径 | ~250 |
 | `src/components/GraphView.tsx` | 新增 | React Flow 载体、焦点/跳数状态、缩放平移 | ~180 |
 | `src/components/GraphDotNode.tsx` | 新增 | 圆点 + 名字；两个连接点都锚在圆点圆心 | ~70 |
-| `src/components/GraphEdgeView.tsx` | 新增 | 极简连线：箭头、虚线、⚠、无端口无手柄 | ~90 |
+| `src/components/GraphEdgeView.tsx` | 新增 | 极简连线：箭头、虚线、无端口无手柄 | ~80 |
 | `src/lib/storage.ts` | 改 | `Settings` 加 `viewMode: 'flow' \| 'graph'` + 默认值 | ~4 |
 | `src/components/Toolbar.tsx` | 改 | 分段控件 `流程图 \| 关系图谱` | ~20 |
 | `src/App.tsx` | 改 | 按 `viewMode` 条件渲染；**同一时刻只挂载一个画布** | ~6 |
@@ -148,7 +148,7 @@ bfsHops(model, fromId) → Map<nodeId, number>   // 最短跳数，视图按需�
 8. 焦点没有渐变光环、标签没有白色底。
 9. **拖动节点只移动这个点**：画布不平移、焦点不变。
 10. **拖动节点不写回文档坐标**。
-11. 虚线 = 待确认项、不合规标签标 ⚠、方向画箭头（三条同时验）。
+11. 虚线 = 待确认项、方向画箭头；连线上没有 ⚠。
 12. 单击聚焦：1 个 `is-focus`，2 跳以外压暗，1 跳仍亮。
 13. 聚焦同步检查器选中（`doc.nodes[].selected`）。
 14. **焦点被摆到圆心（±80px），名字在圆点下面。**
@@ -203,7 +203,7 @@ bfsHops(model, fromId) → Map<nodeId, number>   // 最短跳数，视图按需�
 
 ## 14. 实现记录（与计划的偏差）
 
-实现后回看，十七处与评估时的计划不同或踩了坑，原因都在下面：
+实现后回看，十八处与评估时的计划不同或踩了坑，原因都在下面：
 
 1. **焦点居中走了个来回**：第一版每次单击都重排，节点在两次点击之间跑掉、双击永远打不中，于是干脆去掉了重排；第二轮要求"圆心聚焦"后，改成**延迟 280ms 重排 + 双击撤销**，两个行为都保住了（§5）。
 2. **展开卡片整条功能被移除了**（用户反馈「加号是多余功能」）。第一版曾用 25 行的只读卡片替代 `BlockNode`（它是编辑器组件，挂进只读视图等于把编辑入口偷渡进来）；现在连卡片一起删掉：图谱只负责看关系，字段请回检查器。
@@ -227,5 +227,6 @@ bfsHops(model, fromId) → Map<nodeId, number>   // 最短跳数，视图按需�
 15. **悬停从"放大"改成"变绿"**：放大和"大小=连线数"的编码打架，绿点只做悬停反馈，不参与信息编码。
 16. **居中不能靠 `fitView` 之后再 `setCenter`**：`fitView` 是带动画的，`fitView()` 返回的 promise 不等动画结束，后到的 `setCenter` 会被它的动画覆盖——表现就是"怎么调都稳定偏一截"。改成自己按节点包围盒算缩放，再 `setCenter`。
 17. **React Flow 的 `position` 是节点框的左上角，而布局算的是"圆点中心"**：不换算的话，焦点会稳定偏半个节点宽。现在统一走 `toNodePosition` / `toAnchor` 两个换算，节点框固定 `140×70`，圆点锚在顶部正中，大小变化时圆心不动。
+18. **连线上的 ⚠ 是噪音**：它表示"标签不是十种规范类型之一"，但图谱里多数连线本来就没写类型，于是每条线都挂一个三角。按要求从图谱移除了，信号仍然留在图层面板与检查器里（那里才能改标签）。
 
 仍未做、留待下一轮：120 点性能夹具、字段锚定高亮、`d3-force` 替换手写模拟（手感不够时）。

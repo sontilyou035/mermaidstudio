@@ -130,7 +130,7 @@ test('邻接是无向的，跳数按最短路径算', () => {
   assert.equal(bfsHops(model, '不存在').size, 0)
 })
 
-test('连线带着原有的图语言：虚线待确认、标签不合规要标出来', () => {
+test('连线带着原有的图语言：虚线 = 待确认、箭头照画的方向', () => {
   const model = deriveGraphModel(
     doc(
       [node('t_a'), node('t_b'), node('t_c')],
@@ -145,13 +145,10 @@ test('连线带着原有的图语言：虚线待确认、标签不合规要标�
   const byId = new Map(model.edges.map((e) => [e.id, e]))
 
   assert.equal(byId.get('e1').dashed, true)
-  assert.equal(byId.get('e1').warn, false)
   assert.equal(byId.get('e1').label, '关联: order_id')
   assert.equal(byId.get('e1').arrow, true)
   assert.equal(byId.get('e4').arrow, false)
   assert.equal(byId.get('e2').dashed, false)
-  assert.equal(byId.get('e2').warn, true)
-  assert.equal(byId.get('e3').warn, true)
   assert.equal(byId.get('e3').label, '随便写的一句话')
 })
 

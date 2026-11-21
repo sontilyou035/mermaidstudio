@@ -254,11 +254,10 @@ check('拖动节点不写回文档坐标', dragged.doc === dragStart.doc)
 
 const edgeMarks = await evaluate(`(() => ({
   dashed: document.querySelectorAll('.ms-gedge.is-dashed').length,
-  warn: document.querySelectorAll('.ms-gedge.is-warn').length,
   arrows: document.querySelectorAll('.ms-gedge__arrow').length,
   groups: [...new Set([...document.querySelectorAll('.ms-gdot')].map(el => el.getAttribute('data-group')))],
 }))()`)
-check('虚线 = 待确认项、不合规标签标 ⚠、方向画箭头', edgeMarks.dashed === 1 && edgeMarks.warn === 1 && edgeMarks.arrows === 3, JSON.stringify(edgeMarks))
+check('虚线 = 待确认项、方向画箭头（连线上不再有 ⚠）', edgeMarks.dashed === 1 && edgeMarks.arrows === 3, JSON.stringify(edgeMarks))
 
 /* ---------- 悬停：变绿，不放大 ---------- */
 

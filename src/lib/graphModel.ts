@@ -1,7 +1,6 @@
 import type { DiagramDoc, FlowNode } from '../types'
 // 显式带 .ts：本模块要被 node --experimental-strip-types 直接跑（scripts/unit-graph.mjs），
 // Node 的 ESM 解析要求扩展名；tsconfig 已开 allowImportingTsExtensions。
-import { isEdgeLabelConforming } from './edgeLabels.ts'
 
 /**
  * 关系图谱的派生模型：只依赖文档，不持有任何坐标或状态。
@@ -23,8 +22,6 @@ export interface GraphEdge {
   target: string
   /** 虚线 = 待确认项，沿用流程图与存疑清单的既有约定 */
   dashed: boolean
-  /** 标签不符合十条规范类型，需要在图谱里标出来 */
-  warn: boolean
   /** 悬停时显示的完整标签（类型: 说明） */
   label: string
   /** 是否画箭头：方向照作者画的方向走，不推断外键方向 */
@@ -71,7 +68,6 @@ export function deriveGraphModel(doc: DiagramDoc): GraphModel {
       source: e.source,
       target: e.target,
       dashed: e.data?.lineStyle === 'dashed',
-      warn: !isEdgeLabelConforming(label),
       label,
       arrow: (e.data?.endMarker ?? 'arrow') !== 'none',
     })

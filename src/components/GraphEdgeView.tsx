@@ -4,7 +4,6 @@ import type { Edge, EdgeProps } from '@xyflow/react'
 /** 图谱里的连线：直线 + 自绘箭头，虚线 = 待确认，⚠ = 标签不合规 */
 export interface GraphEdgeData extends Record<string, unknown> {
   dashed: boolean
-  warn: boolean
   arrow: boolean
   label: string
   dim: boolean
@@ -19,7 +18,7 @@ const ARROW_LEN = 8
 const ARROW_HALF = 3.4
 
 function GraphEdgeViewInner({ id, sourceX, sourceY, targetX, targetY, data }: EdgeProps<GraphEdgeModel>) {
-  const d = data ?? { dashed: false, warn: false, arrow: true, label: '', dim: false, sourceR: 4, targetR: 4 }
+  const d = data ?? { dashed: false, arrow: true, label: '', dim: false, sourceR: 4, targetR: 4 }
 
   const dx = targetX - sourceX
   const dy = targetY - sourceY
@@ -37,12 +36,7 @@ function GraphEdgeViewInner({ id, sourceX, sourceY, targetX, targetY, data }: Ed
   const nx = -uy
   const ny = ux
 
-  const className = [
-    'ms-gedge',
-    d.dashed ? 'is-dashed' : '',
-    d.warn ? 'is-warn' : '',
-    d.dim ? 'is-dim' : '',
-  ]
+  const className = ['ms-gedge', d.dashed ? 'is-dashed' : '', d.dim ? 'is-dim' : '']
     .filter(Boolean)
     .join(' ')
 
@@ -57,17 +51,6 @@ function GraphEdgeViewInner({ id, sourceX, sourceY, targetX, targetY, data }: Ed
             baseX - nx * ARROW_HALF
           },${baseY - ny * ARROW_HALF} Z`}
         />
-      ) : null}
-      {d.warn ? (
-        <text
-          className="ms-gedge__warn"
-          x={(sourceX + targetX) / 2}
-          y={(sourceY + targetY) / 2}
-          textAnchor="middle"
-          dominantBaseline="central"
-        >
-          ⚠
-        </text>
       ) : null}
     </g>
   )

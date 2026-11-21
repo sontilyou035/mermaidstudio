@@ -173,7 +173,6 @@ function GraphViewInner() {
           type: 'graph',
           data: {
             dashed: e.dashed,
-            warn: e.warn,
             arrow: e.arrow,
             label: e.label,
             dim: dimIds.has(e.source) || dimIds.has(e.target),

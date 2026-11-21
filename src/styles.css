@@ -2519,23 +2519,6 @@ body.ms-space-pan .react-flow__pane.dragging {
   stroke-dasharray: 6 5;
 }
 
-.ms-gedge.is-warn .ms-gedge__line {
-  stroke: var(--danger);
-}
-
-.ms-gedge.is-warn .ms-gedge__arrow {
-  fill: var(--danger);
-}
-
-.ms-gedge__warn {
-  fill: var(--danger);
-  font-size: 11px;
-  font-family: system-ui, sans-serif;
-  paint-order: stroke;
-  stroke: var(--panel-2);
-  stroke-width: 2.5px;
-}
-
 .ms-gedge.is-dim {
   opacity: 0.22;
 }
