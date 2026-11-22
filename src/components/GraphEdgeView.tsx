@@ -14,8 +14,8 @@ export interface GraphEdgeData extends Record<string, unknown> {
 
 export type GraphEdgeModel = Edge<GraphEdgeData, 'graph'>
 
-const ARROW_LEN = 8
-const ARROW_HALF = 3.4
+const ARROW_LEN = 5.3
+const ARROW_HALF = 2.3
 
 function GraphEdgeViewInner({ id, sourceX, sourceY, targetX, targetY, data }: EdgeProps<GraphEdgeModel>) {
   const d = data ?? { dashed: false, arrow: true, label: '', dim: false, sourceR: 4, targetR: 4 }

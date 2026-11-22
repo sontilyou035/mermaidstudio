@@ -2447,7 +2447,7 @@ body.ms-space-pan .react-flow__pane.dragging {
   /* 绝对定位：表名可能比 140 的节点框长（如 ty_product.mt_store_sku_wide），
      允许它溢出节点框，不要截断成省略号 */
   position: absolute;
-  top: 30px;
+  top: 32px;
   left: 50%;
   transform: translateX(-50%);
   max-width: 230px;

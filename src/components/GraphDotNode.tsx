@@ -12,7 +12,7 @@ export const DOT_ANCHOR_Y = 16
 
 /** 圆点直径：连线越多面积越大（面积与条数成正比，所以直径随 √条数 增长） */
 export function dotSize(degree: number): number {
-  return Math.round(Math.min(22, 8 + Math.sqrt(Math.max(0, degree)) * 3.4))
+  return Math.round(Math.min(26, 9.6 + Math.sqrt(Math.max(0, degree)) * 4.08))
 }
 
 /** 图谱里的一个点：Obsidian 式圆点 + 下方的名字 */
