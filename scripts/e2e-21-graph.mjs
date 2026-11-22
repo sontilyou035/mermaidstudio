@@ -183,8 +183,8 @@ const styling = await evaluate(`(() => {
   }
 })()`)
 check(
-  '连线是 Obsidian 那种细线（0.67px）、颜色 rgb(100, 116, 139)',
-  styling.stroke === '0.67px' && styling.strokeColor === 'rgb(100, 116, 139)',
+  '连线是 Obsidian 那种细线（0.33px）、颜色 rgb(100, 116, 139)',
+  styling.stroke === '0.33px' && styling.strokeColor === 'rgb(100, 116, 139)',
   JSON.stringify({ stroke: styling.stroke, color: styling.strokeColor }),
 )
 check(

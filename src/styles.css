@@ -2512,8 +2512,8 @@ body.ms-space-pan .react-flow__pane.dragging {
 .ms-gedge__line {
   fill: none;
   stroke: var(--ms-gedge-line);
-  /* Obsidian 的连线很细：再细 1/3，靠颜色而不是粗细区分 */
-  stroke-width: 0.67;
+  /* Obsidian 的连线很细：再细 1/3（0.33px），靠颜色而不是粗细区分 */
+  stroke-width: 0.33;
 }
 
 .ms-gedge__arrow {
